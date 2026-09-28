@@ -10,7 +10,6 @@ import lombok.SneakyThrows;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -19,10 +18,7 @@ import java.util.stream.Collectors;
 public class EntityDefinitionScanner {
 
     public static Map<Class<?>, EntityDefinition<?>> scan(Set<Class<?>> entities) {
-        return entities.stream().collect(
-                HashMap::new,
-                (map, value) -> map.put(value, buildDefinition(value)),
-                HashMap::putAll);
+        return entities.stream().collect(Collectors.toMap(Function.identity(), EntityDefinitionScanner::buildDefinition));
 
     }
 
