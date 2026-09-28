@@ -1,7 +1,7 @@
 package cz.tstrecha.foundry.orm.entity;
 
+import cz.tstrecha.foundry.orm.entity.scan.EntityScanner;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
-import lombok.Getter;
 
 import java.util.Map;
 
@@ -11,8 +11,9 @@ public class EntityContext {
     private final Map<Class<?>, EntityCreationStrategy<?>> entityCreationStrategies;
 
     public EntityContext(Class<?> entitySourceRoot) {
-        entityDefinitions = EntityScanner.scan(SystemEntities.class, entitySourceRoot);
-        entityCreationStrategies = EntityScanner.scanStrategies(SystemEntities.class, entitySourceRoot);
+        var scannerResult = EntityScanner.scan(SystemEntities.class, entitySourceRoot);
+        entityDefinitions = scannerResult.entityDefinitions();
+        entityCreationStrategies = scannerResult.entityCreationStrategies();
     }
 
     public <T> EntityDefinition<T> getEntityDefinition(Class<T> clazz) {
