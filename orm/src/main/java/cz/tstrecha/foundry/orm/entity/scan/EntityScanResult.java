@@ -1,6 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.scan;
 
-import cz.tstrecha.foundry.orm.entity.EntityCreationStrategy;
+import cz.tstrecha.foundry.orm.entity.parser.EntityCreationStrategy;
 import cz.tstrecha.foundry.orm.entity.EntityDefinition;
 
 import java.util.Map;

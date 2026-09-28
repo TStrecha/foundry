@@ -11,9 +11,11 @@ public class UserEntity {
 
     @Id
     @Column("id")
-    private String id;
+    private Long id;
 
     @Column("company_name")
     private String companyName;
 
+    @Column("account_type")
+    private AccountType accountType;
 }

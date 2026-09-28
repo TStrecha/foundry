@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity;
 
+import cz.tstrecha.foundry.orm.entity.parser.EntityCreationStrategy;
 import cz.tstrecha.foundry.orm.entity.scan.EntityScanner;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
 

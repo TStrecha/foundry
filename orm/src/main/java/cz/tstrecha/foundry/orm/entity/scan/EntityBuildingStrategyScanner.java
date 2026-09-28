@@ -1,8 +1,9 @@
 package cz.tstrecha.foundry.orm.entity.scan;
 
 import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.entity.EntityCreationStrategy;
-import cz.tstrecha.foundry.orm.entity.EntityParameterInitializationStrategy;
+import cz.tstrecha.foundry.orm.entity.parser.EntityCreationStrategy;
+import cz.tstrecha.foundry.orm.entity.parser.EntityParameterInitializationStrategy;
+import cz.tstrecha.foundry.orm.entity.parser.FieldParser;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.Field;
@@ -33,8 +34,9 @@ public class EntityBuildingStrategyScanner {
     }
 
     @SneakyThrows
-    private static EntityParameterInitializationStrategy buildColumnInitializationStrategy(Field field, Class<?> entityType) {
+    private static <T> EntityParameterInitializationStrategy<T> buildColumnInitializationStrategy(Field field, Class<T> entityType) {
         var setter = MethodScanner.scanFieldSetter(entityType, field);
-        return new EntityParameterInitializationStrategy(field, setter);
+        var fieldParser = new FieldParser<T>(field, setter);
+        return new EntityParameterInitializationStrategy<T>(field, fieldParser);
     }
 }

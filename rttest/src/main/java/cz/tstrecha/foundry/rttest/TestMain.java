@@ -23,7 +23,7 @@ void main() {
     columnsTable.forEach(entity -> {
         System.out.println(entity.getColumnName());
     });
-    System.out.println(appUser.getCompanyName());
+    System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
 
     session.close();
 }

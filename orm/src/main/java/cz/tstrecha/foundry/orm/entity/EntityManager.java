@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
+import cz.tstrecha.foundry.orm.entity.parser.EntityParser;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

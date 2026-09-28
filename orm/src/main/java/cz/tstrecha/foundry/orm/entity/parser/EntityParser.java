@@ -1,5 +1,7 @@
-package cz.tstrecha.foundry.orm.entity;
+package cz.tstrecha.foundry.orm.entity.parser;
 
+import cz.tstrecha.foundry.orm.entity.EntityContext;
+import cz.tstrecha.foundry.orm.entity.EntityDefinition;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
@@ -20,8 +22,8 @@ public class EntityParser {
             var value = row.get(i);
 
             var columnDefinition = definitions.columns().get(label);
-            var setter = entityCreationStrategy.parameterStrategies().get(columnDefinition.field()).setter();
-            setter.invoke(entity, value);
+            var parser = entityCreationStrategy.parameterStrategies().get(columnDefinition.field()).parser();
+            parser.parse(entity, value);
         }
 
         return entity;
