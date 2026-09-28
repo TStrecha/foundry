@@ -1,7 +1,9 @@
 package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
+import cz.tstrecha.foundry.orm.connection.sql.FilterBuilder;
 import cz.tstrecha.foundry.orm.connection.sql.Sql;
+import cz.tstrecha.foundry.orm.connection.sql.SqlOperator;
 import cz.tstrecha.foundry.orm.entity.parser.EntityParser;
 import lombok.RequiredArgsConstructor;
 
@@ -22,12 +24,11 @@ public class EntityManager {
 
     public <T, ID> T find(Class<T> entityType, ID id) {
         var tableDefinition = entityContext.getEntityDefinition(entityType);
-        var filterClause = String.format("%s = '%s'", tableDefinition.idColumnDefinition().name(), id);
 
         var sql = Sql
                 .select(tableDefinition.columns().values().stream().map(ColumnDefinition::name).toList())
                 .from(tableDefinition.tableName())
-                .where(filterClause);
+                .where(new FilterBuilder(tableDefinition.idColumnDefinition().name(), SqlOperator.EQUALS, id));
 
         var result = session.selectOne(sql);
 

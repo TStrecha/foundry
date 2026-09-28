@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
-import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 public class SelectSql implements ExecutableQuery {
@@ -20,15 +19,8 @@ public class SelectSql implements ExecutableQuery {
         return this;
     }
 
-    public SelectSql where(String conditional, Consumer<FilterBuilder> whereBuilder) {
-        var builder = new FilterBuilder(conditional);
-        whereBuilder.accept(builder);
-        this.filterBuilder = builder;
-        return this;
-    }
-
-    public SelectSql where(String conditional) {
-        this.filterBuilder = new FilterBuilder(conditional);;
+    public SelectSql where(FilterBuilder filterBuilder) {
+        this.filterBuilder = filterBuilder;
         return this;
     }
 
@@ -47,24 +39,5 @@ public class SelectSql implements ExecutableQuery {
     @Override
     public SqlExecutor provideExecutor() {
         return new SelectSqlExecutor();
-    }
-
-    @Getter
-    public static class FilterBuilder {
-        private final StringBuilder clause = new StringBuilder();
-
-        private FilterBuilder(String base) {
-            clause.append(base);
-        }
-
-        public FilterBuilder and(String conditional) {
-            clause.append(" AND ").append(conditional);
-            return this;
-        }
-
-        public FilterBuilder or(String conditional) {
-            clause.append(" OR ").append(conditional);
-            return this;
-        }
     }
 }
