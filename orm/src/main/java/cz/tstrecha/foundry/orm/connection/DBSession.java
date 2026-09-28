@@ -92,8 +92,8 @@ public class DBSession {
         return row;
     }
 
-    private LinkedHashSet<String> extractColumnNames(ResultSetMetaData metaData, int columnCount) throws SQLException {
-        var columns = new LinkedHashSet<String>();
+    private LinkedList<String> extractColumnNames(ResultSetMetaData metaData, int columnCount) throws SQLException {
+        var columns = new LinkedList<String>();
 
         for (int i = 1; i <= columnCount; i++) {
             columns.add(metaData.getColumnLabel(i));

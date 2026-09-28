@@ -3,7 +3,7 @@ package cz.tstrecha.foundry.orm.connection;
 import java.util.LinkedList;
 import java.util.Set;
 
-public record QueryResult(Set<String> columnLabels, LinkedList<LinkedList<String>> rows) {
+public record QueryResult(LinkedList<String> columnLabels, LinkedList<LinkedList<String>> rows) {
 
     private int columnCount() {
         return columnLabels.size();
