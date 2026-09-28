@@ -16,6 +16,12 @@ public class UserEntity {
     @Column("company_name")
     private String companyName;
 
+    @Column("first_name")
+    private String firstName;
+
+    @Column("last_name")
+    private String lastName;
+
     @Column("account_type")
     private AccountType accountType;
 }

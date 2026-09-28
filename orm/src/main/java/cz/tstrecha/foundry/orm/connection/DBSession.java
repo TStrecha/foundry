@@ -1,18 +1,19 @@
 package cz.tstrecha.foundry.orm.connection;
 
+import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
 import cz.tstrecha.foundry.orm.entity.EntityManager;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 
-public class DBSession {
+public class DBSession implements Closeable {
 
     private final Connection connection;
 
@@ -26,61 +27,50 @@ public class DBSession {
     }
 
     @SneakyThrows
-    public QueryResult selectAll(String table, String whereClause, String... columns) {
-        var sql = new StringBuilder()
-                .append(" SELECT ").append(String.join(", ", columns))
-                .append(" FROM ").append(table);
-        if(whereClause != null) {
-            sql
-                .append(" WHERE ").append(whereClause);
-        }
-
-        var st = connection.prepareStatement(sql.toString());
-        var rs = st.executeQuery();
-
-        var metaData = rs.getMetaData();
-        var columnCount = rs.getMetaData().getColumnCount();
-
-        var columnNames = extractColumnNames(metaData, columnCount);
-
-        var rows = new LinkedList<LinkedList<String>>();
-        while (rs.next()) {
-            rows.add(extractNextRow(rs, columnCount));
-        }
-
-        rs.close();
-        st.close();
-
-        return new QueryResult(columnNames, rows);
+    public QueryResult selectAll(SelectSql selectSql) {
+        return selectSql.execute(connection, this::parseQueryResult);
     }
 
     @SneakyThrows
-    public SingleQueryResult selectOne(String table, String whereClause, String... columns) {
-        var sql = " SELECT " + String.join(", ", columns)
-                + " FROM " + table
-                + " WHERE " + whereClause;
+    public SingleQueryResult selectOne(SelectSql selectSql) {
+        return selectSql.execute(connection, this::parseSingleQueryResult);
+    }
 
-        var st = connection.prepareStatement(sql);
-        var rs = st.executeQuery();
-
-        var metaData = rs.getMetaData();
-        var columnCount = rs.getMetaData().getColumnCount();
+    @SneakyThrows
+    private SingleQueryResult parseSingleQueryResult(ResultSet resultSet) {
+        var metaData = resultSet.getMetaData();
+        var columnCount = resultSet.getMetaData().getColumnCount();
 
         var columnNames = extractColumnNames(metaData, columnCount);
 
         LinkedList<String> row = null;
-        while (rs.next()) {
+        while (resultSet.next()) {
             if(row != null && !row.isEmpty()){
                 throw new RuntimeException("More than one row was present.");
             }
 
-            row = extractNextRow(rs, columnCount);
+            row = extractNextRow(resultSet, columnCount);
         }
 
-        rs.close();
-        st.close();
-
         return new SingleQueryResult(columnNames, row);
+    }
+
+    @SneakyThrows
+    private QueryResult parseQueryResult(ResultSet resultSet) {
+        var metaData = resultSet.getMetaData();
+        var columnCount = resultSet.getMetaData().getColumnCount();
+
+        var columnNames = extractColumnNames(metaData, columnCount);
+
+        var rows = new LinkedList<LinkedList<String>>();
+        while (resultSet.next()) {
+            rows.add(extractNextRow(resultSet, columnCount));
+        }
+
+        resultSet.close();
+        resultSet.close();
+
+        return new QueryResult(columnNames, rows);
     }
 
     private LinkedList<String> extractNextRow(ResultSet resultSet, int columnCount) throws SQLException {

@@ -15,15 +15,14 @@ void main() {
             .entitySourceRoot(Entities.class)
             .build();
 
-    var session = context.openSession();
-    var entityManager = session.getEntityManager();
-    var columnsTable = entityManager.findAll(ColumnsEntity.class);
-    var appUser = entityManager.find(UserEntity.class, "2");
+    try(var session = context.openSession()) {
+        var entityManager = session.getEntityManager();
+        var columnsTable = entityManager.findAll(ColumnsEntity.class);
+        var appUser = entityManager.find(UserEntity.class, 2L);
 
-    columnsTable.forEach(entity -> {
-        System.out.println(entity.getColumnName());
-    });
-    System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
-
-    session.close();
+        columnsTable.forEach(entity -> {
+            System.out.println(entity.getColumnName());
+        });
+        System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
+    }
 }

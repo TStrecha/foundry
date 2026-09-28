@@ -1,11 +1,11 @@
 package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
+import cz.tstrecha.foundry.orm.connection.sql.Sql;
 import cz.tstrecha.foundry.orm.entity.parser.EntityParser;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 public class EntityManager {
@@ -23,18 +23,25 @@ public class EntityManager {
     public <T, ID> T find(Class<T> entityType, ID id) {
         var tableDefinition = entityContext.getEntityDefinition(entityType);
         var filterClause = String.format("%s = '%s'", tableDefinition.idColumnDefinition().name(), id);
-        var columns = tableDefinition.columns().values().stream().map(ColumnDefinition::name).collect(Collectors.joining(","));
 
-        var result = session.selectOne(tableDefinition.tableName(), filterClause, columns);
+        var sql = Sql
+                .select(tableDefinition.columns().values().stream().map(ColumnDefinition::name).toList())
+                .from(tableDefinition.tableName())
+                .where(filterClause);
+
+        var result = session.selectOne(sql);
 
         return entityParser.parse(entityType, result.columnLabels(), result.row(), tableDefinition);
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
         var tableDefinition = entityContext.getEntityDefinition(entityType);
-        var columns = tableDefinition.columns().values().stream().map(ColumnDefinition::name).collect(Collectors.joining(","));
 
-        var result = session.selectAll(tableDefinition.tableName(), null, columns);
+        var sql = Sql
+                .select(tableDefinition.columns().values().stream().map(ColumnDefinition::name).toList())
+                .from(tableDefinition.tableName());
+
+        var result = session.selectAll(sql);
 
         return result.rows().stream()
                 .map(row -> entityParser.parse(entityType, result.columnLabels(), row, tableDefinition))
