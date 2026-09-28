@@ -8,7 +8,8 @@
     <packaging>pom</packaging>
     <name>foundry</name>
     <modules>
-        <module>test</module>
+        <module>rttest</module>
+        <module>orm</module>
     </modules>
     <properties>
         <java.version>25</java.version>
