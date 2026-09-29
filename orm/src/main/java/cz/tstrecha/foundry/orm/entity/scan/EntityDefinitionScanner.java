@@ -5,7 +5,6 @@ import cz.tstrecha.foundry.orm.definition.Id;
 import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.entity.ColumnDefinition;
 import cz.tstrecha.foundry.orm.entity.EntityDefinition;
-import cz.tstrecha.foundry.orm.entity.type.PostgresColumnTypeIdentifier;
 import lombok.SneakyThrows;
 
 import java.lang.reflect.Field;
@@ -37,8 +36,6 @@ public class EntityDefinitionScanner {
     @SneakyThrows
     private static ColumnDefinition buildColumnDefinition(Field field, Column definition) {
         var isId = field.getAnnotation(Id.class) != null;
-        var type = PostgresColumnTypeIdentifier.identifyType(field.getType());
-
-        return new ColumnDefinition(field, isId, definition.value(), type);
+        return new ColumnDefinition(field, isId, definition.value());
     }
 }
