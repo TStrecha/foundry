@@ -1,22 +1,23 @@
-import cz.tstrecha.foundry.orm.connection.FoundryContext;
+import cz.tstrecha.foundry.orm.FoundryContext;
+import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
 import cz.tstrecha.foundry.rttest.entity.Entities;
 import cz.tstrecha.foundry.rttest.entity.UserEntity;
 
 private final String URL = "jdbc:postgresql://localhost:5432/portify";
-private final String USERNAME = "portify";
+private final String USER = "portify";
 private final String PASSWORD = "portify";
 
 void main() {
-    var context = FoundryContext.builder()
+    var config = FoundryConfiguration.builder()
             .url(URL)
-            .username(USERNAME)
+            .user(USER)
             .password(PASSWORD)
-            .entitySourceRoot(Entities.class)
+            .scanningRoots(List.of(Entities.class))
             .build();
+    var context = new FoundryContext(config);
 
-    try(var session = context.openSession()) {
-        var entityManager = session.getEntityManager();
+    try(var entityManager = context.openSession()) {
         var columnsTable = entityManager.findAll(ColumnsEntity.class);
         var appUser = entityManager.find(UserEntity.class, 2L);
 

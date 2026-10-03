@@ -1,13 +1,10 @@
 package cz.tstrecha.foundry.orm.connection;
 
+import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
-import cz.tstrecha.foundry.orm.entity.EntityManager;
-import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.io.Closeable;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -15,25 +12,21 @@ import java.util.LinkedList;
 
 public class DBSession implements Closeable {
 
-    private final Connection connection;
-
-    @Getter
-    private final EntityManager entityManager;
+    private final ConnectionProvider connectionProvider;
 
     @SneakyThrows
-    public DBSession(String url, String username, String password, FoundryContext context) {
-        this.connection = DriverManager.getConnection(url, username, password);
-        this.entityManager = new EntityManager(this, context.getEntityContext());
+    public DBSession(ConnectionProvider connectionProvider) {
+        this.connectionProvider = connectionProvider;
     }
 
     @SneakyThrows
     public QueryResult selectAll(SelectSql selectSql) {
-        return selectSql.execute(connection, this::parseQueryResult);
+        return selectSql.execute(connectionProvider.acquireConnection(), this::parseQueryResult);
     }
 
     @SneakyThrows
     public SingleQueryResult selectOne(SelectSql selectSql) {
-        return selectSql.execute(connection, this::parseSingleQueryResult);
+        return selectSql.execute(connectionProvider.acquireConnection(), this::parseSingleQueryResult);
     }
 
     @SneakyThrows
@@ -94,7 +87,7 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public void close() {
-        connection.close();
+        connectionProvider.close();
     }
 
 }

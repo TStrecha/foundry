@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.entity.parser.value;
+package cz.tstrecha.foundry.orm.entity.parser;
 
 public class StringValueParser implements ValueParser<String> {
 
