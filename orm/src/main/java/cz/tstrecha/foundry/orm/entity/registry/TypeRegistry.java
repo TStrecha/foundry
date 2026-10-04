@@ -6,7 +6,6 @@ import lombok.SneakyThrows;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,14 +28,14 @@ public class TypeRegistry {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> ManagedType<T> getManagedType(Class<T> type) {
-        //todo casting
         return (ManagedType<T>) registry.get(type);
     }
 
     @SneakyThrows//todo
     public <T> T createAndSaturateInstanceOf(Class<T> type, List<String> columnLabels, List<String> row) {
-        //todo casting
-        return (T) registry.get(type).createAndSaturateInstance(columnLabels, row);
+        var instance = registry.get(type).createAndSaturateInstance(columnLabels, row);
+        return type.cast(instance);
     }
 }
