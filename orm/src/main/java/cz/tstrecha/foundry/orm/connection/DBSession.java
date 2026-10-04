@@ -21,12 +21,16 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public QueryResult selectAll(SelectSql selectSql) {
-        return selectSql.execute(connectionProvider.acquireConnection(), this::parseQueryResult);
+        try (var operationResult = selectSql.execute(connectionProvider.acquireConnection())) {
+            return operationResult.mapToObject(this::parseQueryResult);
+        }
     }
 
     @SneakyThrows
     public SingleQueryResult selectOne(SelectSql selectSql) {
-        return selectSql.execute(connectionProvider.acquireConnection(), this::parseSingleQueryResult);
+        try (var operationResult = selectSql.execute(connectionProvider.acquireConnection())) {
+            return operationResult.mapToObject(this::parseSingleQueryResult);
+        }
     }
 
     @SneakyThrows

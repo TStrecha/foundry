@@ -1,14 +1,15 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
-import cz.tstrecha.foundry.orm.connection.executor.SelectSqlExecutor;
-import cz.tstrecha.foundry.orm.connection.executor.SqlExecutor;
-import lombok.Getter;
+import cz.tstrecha.foundry.orm.connection.result.SelectOperationResult;
 import lombok.RequiredArgsConstructor;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
 
 @RequiredArgsConstructor
-public class SelectSql implements ExecutableQuery {
+public class SelectSql implements ExecutableQuery<SelectOperationResult> {
 
     private final Collection<String> columns;
     private String table;
@@ -25,19 +26,26 @@ public class SelectSql implements ExecutableQuery {
     }
 
     @Override
-    public Query generateQuery() {
-        var query = new StringBuilder();
-        query.append(" SELECT ").append(String.join(",", columns));
-        query.append(" FROM ").append(table);
+    public PreparedStatement generateStatement(Connection connection) throws SQLException {
+        var sqlBuilder = new StringBuilder();
+        sqlBuilder.append(" SELECT ").append(String.join(",", columns));
+        sqlBuilder.append(" FROM ").append(table);
         if(filterBuilder != null) {
-            query.append(" WHERE ").append(filterBuilder.getClause());
+            sqlBuilder.append(" WHERE ").append(filterBuilder.getClause());
         }
 
-        return new Query(query.toString(), null);
+        var preparedStatement = connection.prepareStatement(sqlBuilder.toString());
+        if(filterBuilder != null) {
+            for(int i = 0; i < filterBuilder.getParameters().size(); i++) {
+                preparedStatement.setObject(i + 1, filterBuilder.getParameters().get(i));
+            }
+        }
+
+        return preparedStatement;
     }
 
     @Override
-    public SqlExecutor provideExecutor() {
-        return new SelectSqlExecutor();
+    public SelectOperationResult executeStatement(PreparedStatement statement) throws SQLException {
+        return new SelectOperationResult(statement, statement.executeQuery());
     }
 }

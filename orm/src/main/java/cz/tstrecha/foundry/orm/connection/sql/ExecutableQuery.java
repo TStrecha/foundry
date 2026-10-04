@@ -1,18 +1,19 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
-import cz.tstrecha.foundry.orm.connection.executor.SqlExecutor;
+import cz.tstrecha.foundry.orm.connection.result.DatabaseOperationResult;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.util.function.Function;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
-public interface ExecutableQuery {
+public interface ExecutableQuery<T extends DatabaseOperationResult> {
 
-    Query generateQuery();
+    PreparedStatement generateStatement(Connection connection) throws SQLException;
 
-    SqlExecutor provideExecutor();
+    T executeStatement(PreparedStatement statement) throws SQLException;
 
-    default <T> T execute(Connection connection, Function<ResultSet, T> resultSetConverter) {
-        return provideExecutor().executeQuery(generateQuery(), connection, resultSetConverter);
+    default T execute(Connection connection) throws SQLException {
+        var statement = generateStatement(connection);
+        return executeStatement(statement);
     }
 }
