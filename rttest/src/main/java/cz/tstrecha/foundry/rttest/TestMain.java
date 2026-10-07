@@ -3,6 +3,7 @@ import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
 import cz.tstrecha.foundry.rttest.entity.AccountType;
 import cz.tstrecha.foundry.rttest.entity.Entities;
+import cz.tstrecha.foundry.rttest.entity.MoneyTransactionEntity;
 import cz.tstrecha.foundry.rttest.entity.UserEntity;
 import lombok.SneakyThrows;
 
@@ -23,8 +24,11 @@ void main() {
     try(var entityManager = context.openSession()) {
         entityManager.runInTransaction(() -> {
 
-            var columnsTable = entityManager.findAll(ColumnsEntity.class);
-            var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
+            var columnsTable = entityManager.findAll(MoneyTransactionEntity.class);
+
+            columnsTable.forEach(entity -> {
+                System.out.println(entity.getIdentifier());
+            });
 
             var newUser = new UserEntity();
             newUser.setId(new Random().nextLong());
@@ -35,10 +39,11 @@ void main() {
 
             entityManager.persist(newUser);
 
-            columnsTable.forEach(entity -> {
-                System.out.println(entity.getColumnName());
-            });
+            var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
+
+            var appUser2 = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
+            System.out.println(appUser2.getId() + ": " + appUser2.getAccountType() + " - " + appUser2.getCompanyName());
         });
     }
 }

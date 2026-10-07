@@ -3,6 +3,8 @@ package cz.tstrecha.foundry.orm.entity;
 import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
+import cz.tstrecha.foundry.orm.entity.context.EntityPersistenceBag;
+import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
 import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
@@ -16,24 +18,38 @@ public class EntityManager implements Closeable {
 
     private final DBSession session;
     private final PersisterRegistry persisterRegistry;
+    private final PersistenceContext persistenceContext;
 
     public EntityManager(ConnectionProvider connectionProvider, PersisterRegistry persisterRegistry) {
         this.session = new DBSession(connectionProvider);
         this.persisterRegistry = persisterRegistry;
+        this.persistenceContext = new PersistenceContext();
     }
 
     public <T, ID> Optional<T> find(Class<T> entityType, ID id) {
+        var cached = persistenceContext.getByKey(entityType, id);
+        if(cached.isPresent()) {
+            System.out.println("Getting entity from cache: entityType=" + entityType.getName() + ", id=" + id);
+            return cached.map(EntityPersistenceBag::getEntity);
+        }
+
         var entityPersister = persisterRegistry.getPersister(entityType);
         var sql = entityPersister.generateSelectById(id);
 
-        return session.selectOne(sql, entityPersister.createRowMapperBuilder());
+        var entity = session.selectOne(sql, entityPersister.createRowMapperBuilder());
+        entity.ifPresent(e -> persistenceContext.makeEntityHandled(entityPersister, e));
+
+        return entity;
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
         var entityPersister = persisterRegistry.getPersister(entityType);
         var sql = entityPersister.generateSelect();
 
-        return session.selectAll(sql, entityPersister.createRowMapperBuilder());
+        var entities = session.selectAll(sql, entityPersister.createRowMapperBuilder());
+        entities.forEach(entity -> persistenceContext.makeEntityHandled(entityPersister, entity));
+
+        return entities;
     }
 
     public void persist(Object entity) {

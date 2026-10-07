@@ -4,6 +4,7 @@ import cz.tstrecha.foundry.orm.connection.sql.FilterBuilder;
 import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
 import cz.tstrecha.foundry.orm.connection.sql.SqlOperator;
+import cz.tstrecha.foundry.orm.entity.context.EntityKey;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -41,6 +42,11 @@ public class EntityPersister<T> {
     public SelectSql generateSelect() {
         return select(managedType.getManagedColumnLabels())
                 .from(managedType.getTableName());
+    }
+
+    public EntityKey buildEntityKey(T entity) {
+        var key = managedType.extractKeyFromEntity(entity);
+        return new EntityKey(type, key);
     }
 
     @SneakyThrows

@@ -24,7 +24,7 @@ public class ManagedColumn<E, F> {
         this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(field.getType());
     }
 
-    public ParameterBinder binderForEntity(E entity) throws IllegalAccessException {
+    public ParameterBinder binderForEntity(E entity) {
         var value = getFieldValue(entity);
         return binderForValue(value);
     }
@@ -33,8 +33,12 @@ public class ManagedColumn<E, F> {
         return (statement, index) -> typeHandler.write(statement, index, value);
     }
 
-    public F getFieldValue(E entity) throws IllegalAccessException {
-        return (F) field.get(entity);
+    public F getFieldValue(E entity) {
+        try {
+            return (F) field.get(entity);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("This should never happen!", e);
+        }
     }
 
     public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {

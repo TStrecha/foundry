@@ -75,7 +75,7 @@ public class ManagedType<T> {
         return instance;
     }
 
-    public List<ParameterBinder> getValueBindersForEntity(T entity) throws IllegalAccessException {
+    public List<ParameterBinder> getValueBindersForEntity(T entity) {
         var values = new ArrayList<ParameterBinder>();
         for (var managedColumn : columns.values()) {
             var fieldValue = managedColumn.binderForEntity(entity);
@@ -83,6 +83,10 @@ public class ManagedType<T> {
         }
 
         return values;
+    }
+
+    Object extractKeyFromEntity(T entity) {
+        return getIdColumn().getFieldValue(entity);
     }
 
 }

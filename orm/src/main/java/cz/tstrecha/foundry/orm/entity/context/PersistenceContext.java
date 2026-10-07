@@ -19,7 +19,8 @@ public class PersistenceContext {
     }
 
     public <T> void makeEntityHandled(EntityPersister<T> persister, T entity) {
-        this.context.put(bag.getKey(), bag);
+        var entityKey = persister.buildEntityKey(entity);
+        context.put(entityKey, new EntityPersistenceBag<>(entityKey, entity));
     }
 
 }
