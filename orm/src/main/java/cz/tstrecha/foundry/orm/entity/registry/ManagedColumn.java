@@ -1,28 +1,44 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
-import cz.tstrecha.foundry.orm.entity.parser.ValueParser;
-import cz.tstrecha.foundry.orm.entity.parser.ValueParserResolver;
+import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
+import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
+import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
 import lombok.Getter;
 
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public class ManagedColumn<T> {
+public class ManagedColumn<E, F> {
 
     @Getter
     private final String columnLabel;
     private final Field field;
-    private final ValueParser<?> valueParser;
+    private final TypeHandler<F> typeHandler;
 
     public ManagedColumn(String columnLabel, Field field) {
         this.columnLabel = columnLabel;
         this.field = field;
         this.field.setAccessible(true);
 
-        this.valueParser = ValueParserResolver.findValueParserForType(field.getType());
+        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(field.getType());
     }
 
-    public void saturateColumnForEntity(T entity, String value) throws IllegalAccessException {
-        var parsedValue = valueParser.fromString(value);
+    public ParameterBinder binderForEntity(E entity) throws IllegalAccessException {
+        var value = getFieldValue(entity);
+        return binderForValue(value);
+    }
+
+    public ParameterBinder binderForValue(F value) {
+        return (statement, index) -> typeHandler.write(statement, index, value);
+    }
+
+    public F getFieldValue(E entity) throws IllegalAccessException {
+        return (F) field.get(entity);
+    }
+
+    public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
+        var parsedValue = typeHandler.read(resultSet, index);
         field.set(entity, parsedValue);
     }
 }

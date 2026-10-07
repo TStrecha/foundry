@@ -1,6 +1,7 @@
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
+import cz.tstrecha.foundry.rttest.entity.AccountType;
 import cz.tstrecha.foundry.rttest.entity.Entities;
 import cz.tstrecha.foundry.rttest.entity.UserEntity;
 
@@ -19,7 +20,16 @@ void main() {
 
     try(var entityManager = context.openSession()) {
         var columnsTable = entityManager.findAll(ColumnsEntity.class);
-        var appUser = entityManager.find(UserEntity.class, 2L);
+        var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        var newUser = new UserEntity();
+        newUser.setId(new Random().nextLong());
+        newUser.setAccountType(AccountType.PERSON);
+        newUser.setCompanyName("TestCompany123");
+        newUser.setFirstName("Thomas");
+        newUser.setLastName("Tester");
+
+        entityManager.persist(newUser);
 
         columnsTable.forEach(entity -> {
             System.out.println(entity.getColumnName());

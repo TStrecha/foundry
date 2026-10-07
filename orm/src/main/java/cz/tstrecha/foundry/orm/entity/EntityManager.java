@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class EntityManager implements Closeable {
@@ -20,24 +21,29 @@ public class EntityManager implements Closeable {
         this.persisterRegistry = persisterRegistry;
     }
 
-    public <T, ID> T find(Class<T> entityType, ID id) {
+    public <T, ID> Optional<T> find(Class<T> entityType, ID id) {
         var entityPersister = persisterRegistry.getPersister(entityType);
         var sql = entityPersister.generateSelectById(id);
 
-        var result = session.selectOne(sql);
-
-        return entityPersister.createAndSaturateInstanceOf(result.columnLabels(), result.row());
+        return session.selectOne(sql, entityPersister.createRowMapperBuilder());
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
         var entityPersister = persisterRegistry.getPersister(entityType);
         var sql = entityPersister.generateSelect();
 
-        var result = session.selectAll(sql);
+        return session.selectAll(sql, entityPersister.createRowMapperBuilder());
+    }
 
-        return result.rows().stream()
-                .map(row -> entityPersister.createAndSaturateInstanceOf(result.columnLabels(), row))
-                .toList();
+    public void persist(Object entity) {
+        var entityType = entity.getClass();
+        var entityPersister = persisterRegistry.getPersister(entityType);
+        var sql = entityPersister.generateInsert(entityPersister.getManagedType().getType().cast(entity));
+
+        var rowsCreated = session.insert(sql);
+        if(rowsCreated != 1) {
+            throw new IllegalStateException("Database created 0 new rows.");
+        }
     }
 
     @Override

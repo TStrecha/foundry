@@ -13,4 +13,8 @@ public class Sql {
         return new SelectSql(columns);
     }
 
+    public static InsertSql insert() {
+        return new InsertSql();
+    }
+
 }

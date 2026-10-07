@@ -1,14 +1,17 @@
 package cz.tstrecha.foundry.orm.connection;
 
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
+import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
+import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.SneakyThrows;
 
 import java.io.Closeable;
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 public class DBSession implements Closeable {
 
@@ -20,66 +23,34 @@ public class DBSession implements Closeable {
     }
 
     @SneakyThrows
-    public QueryResult selectAll(SelectSql selectSql) {
-        try (var operationResult = selectSql.execute(connectionProvider.acquireConnection())) {
-            return operationResult.mapToObject(this::parseQueryResult);
+    public <T> List<T> selectAll(SelectSql sql, RowMapperBuilder<T> mapperBuilder) {
+        try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            var columnLabels = extractColumnNames(operationResult.getResultSet().getMetaData());
+            var mappingFunction = mapperBuilder.buildMapper(columnLabels);
+
+            return operationResult.mapToObjects(mappingFunction);
         }
     }
 
     @SneakyThrows
-    public SingleQueryResult selectOne(SelectSql selectSql) {
-        try (var operationResult = selectSql.execute(connectionProvider.acquireConnection())) {
-            return operationResult.mapToObject(this::parseSingleQueryResult);
+    public <T> Optional<T> selectOne(SelectSql sql, RowMapperBuilder<T> mapperBuilder) {
+        try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            var columnLabels = extractColumnNames(operationResult.getResultSet().getMetaData());
+            var mappingFunction = mapperBuilder.buildMapper(columnLabels);
+
+            return operationResult.mapToObject(mappingFunction);
         }
     }
 
     @SneakyThrows
-    private SingleQueryResult parseSingleQueryResult(ResultSet resultSet) {
-        var metaData = resultSet.getMetaData();
-        var columnCount = resultSet.getMetaData().getColumnCount();
-
-        var columnNames = extractColumnNames(metaData, columnCount);
-
-        LinkedList<String> row = null;
-        while (resultSet.next()) {
-            if(row != null && !row.isEmpty()){
-                throw new RuntimeException("More than one row was present.");
-            }
-
-            row = extractNextRow(resultSet, columnCount);
+    public int insert(InsertSql sql) {
+        try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            return operationResult.getRowsCreated();
         }
-
-        return new SingleQueryResult(columnNames, row);
     }
 
-    @SneakyThrows
-    private QueryResult parseQueryResult(ResultSet resultSet) {
-        var metaData = resultSet.getMetaData();
-        var columnCount = resultSet.getMetaData().getColumnCount();
-
-        var columnNames = extractColumnNames(metaData, columnCount);
-
-        var rows = new LinkedList<LinkedList<String>>();
-        while (resultSet.next()) {
-            rows.add(extractNextRow(resultSet, columnCount));
-        }
-
-        resultSet.close();
-        resultSet.close();
-
-        return new QueryResult(columnNames, rows);
-    }
-
-    private LinkedList<String> extractNextRow(ResultSet resultSet, int columnCount) throws SQLException {
-        var row = new LinkedList<String>();
-        for(int i = 1; i <= columnCount; i++) {
-            row.add(resultSet.getString(i));
-        }
-
-        return row;
-    }
-
-    private LinkedList<String> extractColumnNames(ResultSetMetaData metaData, int columnCount) throws SQLException {
+    private List<String> extractColumnNames(ResultSetMetaData metaData) throws SQLException {
+        var columnCount = metaData.getColumnCount();
         var columns = new LinkedList<String>();
 
         for (int i = 1; i <= columnCount; i++) {

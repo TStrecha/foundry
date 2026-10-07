@@ -1,11 +1,16 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
 import cz.tstrecha.foundry.orm.definition.Column;
 import cz.tstrecha.foundry.orm.definition.Id;
 import cz.tstrecha.foundry.orm.definition.Table;
+import cz.tstrecha.foundry.orm.entity.row.RowMapper;
 import lombok.Getter;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +21,12 @@ public class ManagedType<T> {
     @Getter
     private final Class<T> type;
     @Getter
-    private final ManagedColumn<T> idColumn;
+    private final ManagedColumn<T, ?> idColumn;
     @Getter
     private final String tableName;
 
     private final ManagedTypeCreator<T> entityCreator;
-    private final Map<String, ManagedColumn<T>> columns;
+    private final Map<String, ManagedColumn<T, ?>> columns;
 
     public ManagedType(Class<T> type) throws NoSuchMethodException {
         this.type = type;
@@ -29,7 +34,7 @@ public class ManagedType<T> {
         this.tableName = type.getAnnotation(Table.class).value();
 
         this.columns = new HashMap<>();
-        ManagedColumn<T> idColumn = null;
+        ManagedColumn<T, ?> idColumn = null;
 
         for (var field : type.getDeclaredFields()) {
             var columnDefinition = field.getAnnotation(Column.class);
@@ -37,7 +42,7 @@ public class ManagedType<T> {
                 continue;
             }
 
-            var managedColumn = new ManagedColumn<T>(columnDefinition.value(), field);
+            var managedColumn = new ManagedColumn<T, Object>(columnDefinition.value(), field);
             columns.put(columnDefinition.value(), managedColumn);
 
             if(field.getAnnotation(Id.class) != null) {
@@ -52,17 +57,32 @@ public class ManagedType<T> {
         return columns.keySet();
     }
 
-    public T createAndSaturateInstance(List<String> columnLabels, List<String> row) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public RowMapper<T> createRowMapper(List<String> columnLabels) {
+        var columnsOrdered = columnLabels.stream().map(columns::get).toList();
+
+        return resultSet -> createAndSaturateInstance(columnsOrdered, resultSet);
+
+    }
+
+    private T createAndSaturateInstance(List<? extends ManagedColumn<T, ?>> columnsOrdered, ResultSet resultSet)
+            throws InvocationTargetException, InstantiationException, IllegalAccessException, SQLException {
         var instance = this.entityCreator.createNewEmptyInstance();
 
-        for(int i = 0; i < columnLabels.size(); i++) {
-            var label = columnLabels.get(i);
-            var value = row.get(i);
-
-            this.columns.get(label).saturateColumnForEntity(instance, value);
+        for(int i = 0; i < columnsOrdered.size(); i++) {
+            columnsOrdered.get(i).saturateColumnForEntity(instance, resultSet, i + 1);
         }
 
         return instance;
+    }
+
+    public List<ParameterBinder> getValueBindersForEntity(T entity) throws IllegalAccessException {
+        var values = new ArrayList<ParameterBinder>();
+        for (var managedColumn : columns.values()) {
+            var fieldValue = managedColumn.binderForEntity(entity);
+            values.add(fieldValue);
+        }
+
+        return values;
     }
 
 }
