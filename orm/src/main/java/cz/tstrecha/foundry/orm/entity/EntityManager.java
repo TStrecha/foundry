@@ -2,11 +2,12 @@ package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
-import cz.tstrecha.foundry.orm.connection.sql.Sql;
+import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,8 +47,35 @@ public class EntityManager implements Closeable {
         }
     }
 
+    public void runInTransaction(RunnableWithException runnable) {
+        var tx = getTransaction();
+        try {
+            tx.begin();
+            runnable.run();
+            tx.commit();
+        } catch (Exception ex) {
+            try {
+                tx.rollback();
+                throw new RuntimeException(ex);
+            } catch (SQLException rollbackEx) {
+                throw new RuntimeException(rollbackEx);
+            }
+        }
+    }
+
+    public Transaction getTransaction() {
+        return this.session.getTransaction();
+    }
+
     @Override
     public void close() {
         this.session.close();
+    }
+
+    @FunctionalInterface
+    public interface RunnableWithException {
+
+        void run() throws Exception;
+
     }
 }

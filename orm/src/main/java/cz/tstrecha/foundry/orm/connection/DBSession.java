@@ -3,7 +3,9 @@ package cz.tstrecha.foundry.orm.connection;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
+import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.io.Closeable;
@@ -16,10 +18,13 @@ import java.util.Optional;
 public class DBSession implements Closeable {
 
     private final ConnectionProvider connectionProvider;
+    @Getter
+    private final Transaction transaction;
 
     @SneakyThrows
     public DBSession(ConnectionProvider connectionProvider) {
         this.connectionProvider = connectionProvider;
+        this.transaction = new Transaction(connectionProvider.acquireConnection());
     }
 
     @SneakyThrows

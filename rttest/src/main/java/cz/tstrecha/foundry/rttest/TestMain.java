@@ -4,11 +4,13 @@ import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
 import cz.tstrecha.foundry.rttest.entity.AccountType;
 import cz.tstrecha.foundry.rttest.entity.Entities;
 import cz.tstrecha.foundry.rttest.entity.UserEntity;
+import lombok.SneakyThrows;
 
 private final String URL = "jdbc:postgresql://localhost:5432/portify";
 private final String USER = "portify";
 private final String PASSWORD = "portify";
 
+@SneakyThrows
 void main() {
     var config = FoundryConfiguration.builder()
             .url(URL)
@@ -19,21 +21,24 @@ void main() {
     var context = new FoundryContext(config);
 
     try(var entityManager = context.openSession()) {
-        var columnsTable = entityManager.findAll(ColumnsEntity.class);
-        var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
+        entityManager.runInTransaction(() -> {
 
-        var newUser = new UserEntity();
-        newUser.setId(new Random().nextLong());
-        newUser.setAccountType(AccountType.PERSON);
-        newUser.setCompanyName("TestCompany123");
-        newUser.setFirstName("Thomas");
-        newUser.setLastName("Tester");
+            var columnsTable = entityManager.findAll(ColumnsEntity.class);
+            var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        entityManager.persist(newUser);
+            var newUser = new UserEntity();
+            newUser.setId(new Random().nextLong());
+            newUser.setAccountType(AccountType.PERSON);
+            newUser.setCompanyName("TestCompany123");
+            newUser.setFirstName("Thomas");
+            newUser.setLastName("Tester");
 
-        columnsTable.forEach(entity -> {
-            System.out.println(entity.getColumnName());
+            entityManager.persist(newUser);
+
+            columnsTable.forEach(entity -> {
+                System.out.println(entity.getColumnName());
+            });
+            System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
         });
-        System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
     }
 }
