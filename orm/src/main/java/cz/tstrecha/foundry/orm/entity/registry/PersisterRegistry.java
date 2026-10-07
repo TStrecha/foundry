@@ -2,7 +2,6 @@ package cz.tstrecha.foundry.orm.entity.registry;
 
 import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
-import lombok.SneakyThrows;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 
@@ -11,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class TypeRegistry {
+public class PersisterRegistry {
 
-    private final Map<Class<?>, ManagedType<?>> registry = new HashMap<>();
+    private final Map<Class<?>, EntityPersister<?>> persisters = new HashMap<>();
 
-    public TypeRegistry(List<Class<?>> scanningRoots) throws NoSuchMethodException {
+    public PersisterRegistry(List<Class<?>> scanningRoots) throws NoSuchMethodException {
         var packageNames = Stream.concat(scanningRoots.stream(), Stream.of(SystemEntities.class))
                 .map(Class::getPackageName)
                 .toArray(String[]::new);
@@ -24,18 +23,14 @@ public class TypeRegistry {
 
         var entities = reflections.getTypesAnnotatedWith(Table.class);
         for (var entity : entities) {
-            registry.put(entity, new ManagedType<>(entity));
+            var managedType = new ManagedType<>(entity);
+            var persister = new EntityPersister<>(managedType);
+            persisters.put(entity, persister);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public <T> ManagedType<T> getManagedType(Class<T> type) {
-        return (ManagedType<T>) registry.get(type);
-    }
-
-    @SneakyThrows//todo
-    public <T> T createAndSaturateInstanceOf(Class<T> type, List<String> columnLabels, List<String> row) {
-        var instance = registry.get(type).createAndSaturateInstance(columnLabels, row);
-        return type.cast(instance);
+    public <T> EntityPersister<T> getPersister(Class<T> type) {
+        return (EntityPersister<T>) persisters.get(type);
     }
 }

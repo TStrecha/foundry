@@ -2,10 +2,8 @@ package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
-import cz.tstrecha.foundry.orm.connection.sql.FilterBuilder;
 import cz.tstrecha.foundry.orm.connection.sql.Sql;
-import cz.tstrecha.foundry.orm.connection.sql.SqlOperator;
-import cz.tstrecha.foundry.orm.entity.registry.TypeRegistry;
+import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;
@@ -15,37 +13,30 @@ import java.util.List;
 public class EntityManager implements Closeable {
 
     private final DBSession session;
-    private final TypeRegistry typeRegistry;
+    private final PersisterRegistry persisterRegistry;
 
-    public EntityManager(ConnectionProvider connectionProvider, TypeRegistry typeRegistry) {
+    public EntityManager(ConnectionProvider connectionProvider, PersisterRegistry persisterRegistry) {
         this.session = new DBSession(connectionProvider);
-        this.typeRegistry = typeRegistry;
+        this.persisterRegistry = persisterRegistry;
     }
 
     public <T, ID> T find(Class<T> entityType, ID id) {
-        var managedType = typeRegistry.getManagedType(entityType);
-
-        var sql = Sql
-                .select(managedType.getManagedColumnLabels())
-                .from(managedType.getTableName())
-                .where(new FilterBuilder(managedType.getIdColumn().getColumnLabel(), SqlOperator.EQUALS, id));
+        var entityPersister = persisterRegistry.getPersister(entityType);
+        var sql = entityPersister.generateSelectById(id);
 
         var result = session.selectOne(sql);
 
-        return typeRegistry.createAndSaturateInstanceOf(entityType, result.columnLabels(), result.row());
+        return entityPersister.createAndSaturateInstanceOf(entityType, result.columnLabels(), result.row());
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
-        var managedType = typeRegistry.getManagedType(entityType);
-
-        var sql = Sql
-                .select(managedType.getManagedColumnLabels())
-                .from(managedType.getTableName());
+        var entityPersister = persisterRegistry.getPersister(entityType);
+        var sql = entityPersister.generateSelect();
 
         var result = session.selectAll(sql);
 
         return result.rows().stream()
-                .map(row -> typeRegistry.createAndSaturateInstanceOf(entityType, result.columnLabels(), row))
+                .map(row -> entityPersister.createAndSaturateInstanceOf(entityType, result.columnLabels(), row))
                 .toList();
     }
 
