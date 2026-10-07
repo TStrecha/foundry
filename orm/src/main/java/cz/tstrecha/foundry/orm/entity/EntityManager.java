@@ -26,7 +26,7 @@ public class EntityManager implements Closeable {
 
         var result = session.selectOne(sql);
 
-        return entityPersister.createAndSaturateInstanceOf(entityType, result.columnLabels(), result.row());
+        return entityPersister.createAndSaturateInstanceOf(result.columnLabels(), result.row());
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
@@ -36,7 +36,7 @@ public class EntityManager implements Closeable {
         var result = session.selectAll(sql);
 
         return result.rows().stream()
-                .map(row -> entityPersister.createAndSaturateInstanceOf(entityType, result.columnLabels(), row))
+                .map(row -> entityPersister.createAndSaturateInstanceOf(result.columnLabels(), row))
                 .toList();
     }
 
