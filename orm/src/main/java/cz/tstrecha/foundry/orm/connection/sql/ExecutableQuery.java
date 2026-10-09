@@ -8,12 +8,18 @@ import java.sql.SQLException;
 
 public interface ExecutableQuery<T extends DatabaseOperationResult> {
 
-    PreparedStatement generateStatement(Connection connection) throws SQLException;
+    String buildSql();
+
+    void bindParameters(PreparedStatement statement);
 
     T executeStatement(PreparedStatement statement) throws SQLException;
 
     default T execute(Connection connection) throws SQLException {
-        var statement = generateStatement(connection);
+        var sql = buildSql();
+        System.out.println("Executing SQL: " + sql);
+
+        var statement = connection.prepareStatement(sql);
+        bindParameters(statement);
         return executeStatement(statement);
     }
 }
