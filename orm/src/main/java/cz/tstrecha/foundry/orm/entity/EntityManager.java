@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity;
 import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
+import cz.tstrecha.foundry.orm.entity.context.DirtyEntityBag;
 import cz.tstrecha.foundry.orm.entity.context.EntityPersistenceBag;
 import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
 import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
@@ -66,7 +67,7 @@ public class EntityManager implements Closeable {
         persistenceContext.checkForDirtyEntities().forEach(this::flushEntity);
     }
 
-    public <T> void flushEntity(PersistenceContext.DirtyEntityBag<T> dirtyEntityBag) {
+    public <T> void flushEntity(DirtyEntityBag<T> dirtyEntityBag) {
         var key = dirtyEntityBag.entityKey();
         var entityPersister = persisterRegistry.getPersister(key.entityType());
 

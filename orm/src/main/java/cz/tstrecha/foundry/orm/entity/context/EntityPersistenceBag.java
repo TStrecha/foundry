@@ -26,7 +26,7 @@ public class EntityPersistenceBag<T> {
     }
 
     @Nullable
-    public PersistenceContext.DirtyEntityBag<T> createDirtyEntityBagIfDirty() {
+    public DirtyEntityBag<T> createDirtyEntityBagIfDirty() {
         var current = managedType.createEntitySnapshot(entity);
         var dirtyColumns = new ArrayList<ManagedColumn<T, ?>>();
 
@@ -44,6 +44,6 @@ public class EntityPersistenceBag<T> {
             return null;
         }
 
-        return new PersistenceContext.DirtyEntityBag<>(getKey(), getEntity(), dirtyColumns);
+        return new DirtyEntityBag<>(getKey(), getEntity(), dirtyColumns);
     }
 }

@@ -46,6 +46,7 @@ void main() {
 
             var appUser2 = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser2.getId() + ": " + appUser2.getAccountType() + " - " + appUser2.getCompanyName());
+            System.out.println("App users are equal: " + (appUser == appUser2));
         });
     }
 }

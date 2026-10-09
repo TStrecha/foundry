@@ -11,14 +11,12 @@ import java.util.Optional;
 
 public class PersistenceContext {
 
-    private Map<EntityKey, EntityPersistenceBag<?>> context = new HashMap<>();
-
-    public <T> Optional<EntityPersistenceBag<T>> getByKey(EntityKey entityKey) {
-        return Optional.ofNullable((EntityPersistenceBag<T>) this.context.get(entityKey));
-    }
+    private final Map<EntityKey<?>, EntityPersistenceBag<?>> context = new HashMap<>();
 
     public <T> Optional<EntityPersistenceBag<T>> getByKey(Class<T> type, Object key) {
-        return Optional.ofNullable((EntityPersistenceBag<T>) this.context.get(new EntityKey(type, key)));
+        var entityKey = new EntityKey<>(type, key);
+        var bag = (EntityPersistenceBag<T>) this.context.get(entityKey);
+        return Optional.ofNullable(bag);
     }
 
     public <T> void makeEntityHandled(EntityPersister<T> persister, T entity) {
@@ -31,10 +29,6 @@ public class PersistenceContext {
                 .<DirtyEntityBag<?>>map(EntityPersistenceBag::createDirtyEntityBagIfDirty)
                 .filter(Objects::nonNull)
                 .toList();
-    }
-
-    public record DirtyEntityBag<T>(EntityKey<T> entityKey, T entity, List<ManagedColumn<T, ?>> dirtyColumns) {
-
     }
 
 }
