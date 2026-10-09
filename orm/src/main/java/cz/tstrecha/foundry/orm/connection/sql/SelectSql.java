@@ -2,12 +2,14 @@ package cz.tstrecha.foundry.orm.connection.sql;
 
 import cz.tstrecha.foundry.orm.connection.result.SelectOperationResult;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 
+@ToString
 @RequiredArgsConstructor
 public class SelectSql implements ExecutableQuery<SelectOperationResult> {
 
@@ -37,7 +39,7 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
         var preparedStatement = connection.prepareStatement(sqlBuilder.toString());
         if(filterBuilder != null) {
             for(int i = 0; i < filterBuilder.getParameters().size(); i++) {
-                preparedStatement.setObject(i + 1, filterBuilder.getParameters().get(i));
+                filterBuilder.getParameters().get(i).bind(preparedStatement, i + 1);
             }
         }
 

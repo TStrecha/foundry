@@ -6,6 +6,7 @@ import java.sql.SQLException;
 public class Transaction {
 
     private boolean active;
+    private boolean rollbackOnly;
     private final Connection connection;
 
     public Transaction(Connection connection) {
@@ -23,6 +24,9 @@ public class Transaction {
 
     public void commit() throws SQLException {
         requireActive();
+        if(rollbackOnly) {
+            throw new IllegalStateException("Transaction was marked as rollback only");
+        }
         connection.commit();
         this.active = false;
     }
@@ -31,6 +35,10 @@ public class Transaction {
         requireActive();
         connection.rollback();
         this.active = false;
+    }
+
+    public void markAsRollbackOnly() {
+        this.rollbackOnly = true;
     }
 
     private void requireActive() {

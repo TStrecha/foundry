@@ -1,6 +1,6 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
-import cz.tstrecha.foundry.orm.connection.result.InsertOperationResult;
+import cz.tstrecha.foundry.orm.connection.result.UpdateOperationResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class InsertSql implements ExecutableQuery<InsertOperationResult> {
+public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
 
     private String table;
     private Collection<String> columns;
@@ -44,7 +44,7 @@ public class InsertSql implements ExecutableQuery<InsertOperationResult> {
     }
 
     @Override
-    public InsertOperationResult executeStatement(PreparedStatement statement) throws SQLException {
-        return new InsertOperationResult(statement, statement.executeUpdate());
+    public UpdateOperationResult executeStatement(PreparedStatement statement) throws SQLException {
+        return new UpdateOperationResult(statement, statement.executeUpdate());
     }
 }

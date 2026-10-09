@@ -1,5 +1,5 @@
 package cz.tstrecha.foundry.orm.entity.context;
 
-public record EntityKey(Class<?> entityType, Object key) {
+public record EntityKey<T>(Class<T> entityType, Object key) {
 
 }

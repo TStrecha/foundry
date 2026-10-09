@@ -4,12 +4,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
-import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.function.Function;
 
 @RequiredArgsConstructor
-public class InsertOperationResult implements DatabaseOperationResult {
+public class UpdateOperationResult implements DatabaseOperationResult {
 
     private final Statement statement;
 

@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.connection;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
+import cz.tstrecha.foundry.orm.connection.sql.UpdateSql;
 import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
@@ -54,6 +55,13 @@ public class DBSession implements Closeable {
         }
     }
 
+    @SneakyThrows
+    public int update(UpdateSql sql) {
+        try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            return operationResult.getRowsCreated();
+        }
+    }
+
     private List<String> extractColumnNames(ResultSetMetaData metaData) throws SQLException {
         var columnCount = metaData.getColumnCount();
         var columns = new LinkedList<String>();
@@ -69,5 +77,4 @@ public class DBSession implements Closeable {
     public void close() {
         connectionProvider.close();
     }
-
 }

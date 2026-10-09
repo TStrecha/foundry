@@ -17,4 +17,8 @@ public class Sql {
         return new InsertSql();
     }
 
+    public static UpdateSql update(String table) {
+        return new UpdateSql(table);
+    }
+
 }

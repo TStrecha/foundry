@@ -22,8 +22,7 @@ void main() {
     var context = new FoundryContext(config);
 
     try(var entityManager = context.openSession()) {
-        entityManager.runInTransaction(() -> {
-
+        entityManager.runInTransaction(_ -> {
             var columnsTable = entityManager.findAll(MoneyTransactionEntity.class);
 
             columnsTable.forEach(entity -> {
@@ -41,6 +40,9 @@ void main() {
 
             var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
+
+            appUser.setCompanyName("testing");
+            appUser.setLastName("1");
 
             var appUser2 = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser2.getId() + ": " + appUser2.getAccountType() + " - " + appUser2.getCompanyName());

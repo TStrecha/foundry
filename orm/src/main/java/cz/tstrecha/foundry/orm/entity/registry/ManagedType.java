@@ -11,6 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +54,6 @@ public class ManagedType<T> {
         this.idColumn = idColumn;
     }
 
-    public Set<String> getManagedColumnLabels() {
-        return columns.keySet();
-    }
-
     public RowMapper<T> createRowMapper(List<String> columnLabels) {
         var columnsOrdered = columnLabels.stream().map(columns::get).toList();
 
@@ -76,8 +73,12 @@ public class ManagedType<T> {
     }
 
     public List<ParameterBinder> getValueBindersForEntity(T entity) {
+        return getValueBindersForEntity(entity, columns.values());
+    }
+
+    public List<ParameterBinder> getValueBindersForEntity(T entity, Collection<ManagedColumn<T, ?>> columns) {
         var values = new ArrayList<ParameterBinder>();
-        for (var managedColumn : columns.values()) {
+        for (var managedColumn : columns) {
             var fieldValue = managedColumn.binderForEntity(entity);
             values.add(fieldValue);
         }
@@ -85,8 +86,19 @@ public class ManagedType<T> {
         return values;
     }
 
-    Object extractKeyFromEntity(T entity) {
+    public List<?> createEntitySnapshot(T entity) {
+        return columns.values().stream().map(e -> e.getFieldValue(entity)).toList();
+    }
+
+    public Object extractKeyFromEntity(T entity) {
         return getIdColumn().getFieldValue(entity);
     }
 
+    public ManagedColumn<T, ?> getColumnByIndex(int i) {
+        return new ArrayList<>(columns.values()).get(i);
+    }
+
+    public Set<String> getManagedColumnLabels() {
+        return columns.keySet();
+    }
 }

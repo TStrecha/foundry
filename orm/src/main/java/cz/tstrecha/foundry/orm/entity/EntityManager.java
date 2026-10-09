@@ -29,7 +29,6 @@ public class EntityManager implements Closeable {
     public <T, ID> Optional<T> find(Class<T> entityType, ID id) {
         var cached = persistenceContext.getByKey(entityType, id);
         if(cached.isPresent()) {
-            System.out.println("Getting entity from cache: entityType=" + entityType.getName() + ", id=" + id);
             return cached.map(EntityPersistenceBag::getEntity);
         }
 
@@ -63,11 +62,27 @@ public class EntityManager implements Closeable {
         }
     }
 
-    public void runInTransaction(RunnableWithException runnable) {
+    public void flush() {
+        persistenceContext.checkForDirtyEntities().forEach(this::flushEntity);
+    }
+
+    public <T> void flushEntity(PersistenceContext.DirtyEntityBag<T> dirtyEntityBag) {
+        var key = dirtyEntityBag.entityKey();
+        var entityPersister = persisterRegistry.getPersister(key.entityType());
+
+        var sql = entityPersister.generateUpdate(key.key(), dirtyEntityBag.entity(), dirtyEntityBag.dirtyColumns());
+        var rowsCreated = session.update(sql);
+        if(rowsCreated != 1) {
+            throw new IllegalStateException("Database created 0 new rows.");
+        }
+    }
+
+    public void runInTransaction(TransactionRunnable runnable) {
         var tx = getTransaction();
         try {
             tx.begin();
-            runnable.run();
+            runnable.run(tx);
+            flush();
             tx.commit();
         } catch (Exception ex) {
             try {
@@ -89,9 +104,9 @@ public class EntityManager implements Closeable {
     }
 
     @FunctionalInterface
-    public interface RunnableWithException {
+    public interface TransactionRunnable {
 
-        void run() throws Exception;
+        void run(Transaction tx) throws Exception;
 
     }
 }
