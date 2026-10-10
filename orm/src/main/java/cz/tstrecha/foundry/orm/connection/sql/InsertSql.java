@@ -26,21 +26,23 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
     }
 
     @Override
-    public PreparedStatement generateStatement(Connection connection) throws SQLException {
+    public String buildSql() {
         var columnStatement = String.join(",", columns);
         var valuePlaceholders = valueBinders.stream().map(_ -> "?").collect(Collectors.joining(","));
 
         var sqlBuilder = new StringBuilder();
-        sqlBuilder.append(" INSERT INTO ").append(table).append("(").append(columnStatement).append(")");
+        sqlBuilder.append("INSERT INTO ").append(table).append("(").append(columnStatement).append(")");
         sqlBuilder.append(" VALUES ").append("(").append(valuePlaceholders).append(")");
 
-        var preparedStatement = connection.prepareStatement(sqlBuilder.toString());
+        return sqlBuilder.toString();
+    }
+
+    @Override
+    public void bindParameters(PreparedStatement statement) throws SQLException {
         for(int i = 0; i < valueBinders.size(); i++) {
             var valueBinder = valueBinders.get(i);
-            valueBinder.bind(preparedStatement, i + 1);
+            valueBinder.bind(statement, i + 1);
         }
-
-        return preparedStatement;
     }
 
     @Override

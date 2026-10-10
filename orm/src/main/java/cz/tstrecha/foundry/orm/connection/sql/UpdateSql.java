@@ -32,31 +32,33 @@ public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
     }
 
     @Override
-    public PreparedStatement generateStatement(Connection connection) throws SQLException {
+    public String buildSql() {
         var setterStatement = columnsToBeSet.stream().map(column -> column + " = ?").collect(Collectors.joining(","));
 
         var sqlBuilder = new StringBuilder();
-        sqlBuilder.append(" UPDATE ").append(table);
+        sqlBuilder.append("UPDATE ").append(table);
         sqlBuilder.append(" SET ").append(setterStatement);
 
         if(filterBuilder != null) {
             sqlBuilder.append(" WHERE ").append(filterBuilder.getClause());
         }
 
-        var preparedStatement = connection.prepareStatement(sqlBuilder.toString());
+        return sqlBuilder.toString();
+    }
+
+    @Override
+    public void bindParameters(PreparedStatement statement) throws SQLException {
         var i = 0;
         for(; i < columnValueBinders.size(); i++) {
             var valueBinder = columnValueBinders.get(i);
-            valueBinder.bind(preparedStatement, i + 1);
+            valueBinder.bind(statement, i + 1);
         }
 
         if(filterBuilder != null) {
             for(; i < filterBuilder.getParameters().size() + columnValueBinders.size(); i++) {
-                filterBuilder.getParameters().get(i - columnValueBinders.size()).bind(preparedStatement, i + 1);
+                filterBuilder.getParameters().get(i - columnValueBinders.size()).bind(statement, i + 1);
             }
         }
-
-        return preparedStatement;
     }
 
     @Override

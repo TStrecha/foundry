@@ -4,6 +4,7 @@ import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
+import org.reflections.util.FilterBuilder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,13 @@ public class PersisterRegistry {
         var packageNames = Stream.concat(scanningRoots.stream(), Stream.of(SystemEntities.class))
                 .map(Class::getPackageName)
                 .toArray(String[]::new);
-        var reflectionsConfig = new ConfigurationBuilder().forPackages(packageNames);
+        var filterBuilder = new FilterBuilder();
+        for (var pkg : packageNames) {
+            filterBuilder.includePackage(pkg);
+        }
+        var reflectionsConfig = new ConfigurationBuilder()
+                .forPackages(packageNames)
+                .filterInputsBy(filterBuilder);
         var reflections = new Reflections(reflectionsConfig);
 
         var entities = reflections.getTypesAnnotatedWith(Table.class);

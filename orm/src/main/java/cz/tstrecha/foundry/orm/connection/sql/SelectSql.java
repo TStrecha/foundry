@@ -28,22 +28,25 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
     }
 
     @Override
-    public PreparedStatement generateStatement(Connection connection) throws SQLException {
+    public String buildSql() {
         var sqlBuilder = new StringBuilder();
-        sqlBuilder.append(" SELECT ").append(String.join(",", columns));
+        sqlBuilder.append("SELECT ").append(String.join(",", columns));
         sqlBuilder.append(" FROM ").append(table);
+
         if(filterBuilder != null) {
             sqlBuilder.append(" WHERE ").append(filterBuilder.getClause());
         }
 
-        var preparedStatement = connection.prepareStatement(sqlBuilder.toString());
+        return sqlBuilder.toString();
+    }
+
+    @Override
+    public void bindParameters(PreparedStatement statement) throws SQLException {
         if(filterBuilder != null) {
             for(int i = 0; i < filterBuilder.getParameters().size(); i++) {
-                filterBuilder.getParameters().get(i).bind(preparedStatement, i + 1);
+                filterBuilder.getParameters().get(i).bind(statement, i + 1);
             }
         }
-
-        return preparedStatement;
     }
 
     @Override

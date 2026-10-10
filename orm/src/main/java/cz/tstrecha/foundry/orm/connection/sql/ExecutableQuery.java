@@ -10,13 +10,13 @@ public interface ExecutableQuery<T extends DatabaseOperationResult> {
 
     String buildSql();
 
-    void bindParameters(PreparedStatement statement);
+    void bindParameters(PreparedStatement statement) throws SQLException;
 
     T executeStatement(PreparedStatement statement) throws SQLException;
 
     default T execute(Connection connection) throws SQLException {
-        var sql = buildSql();
-        System.out.println("Executing SQL: " + sql);
+        var sql = buildSql() + ";";
+        System.out.println("Executing query: " + sql);
 
         var statement = connection.prepareStatement(sql);
         bindParameters(statement);
