@@ -9,6 +9,8 @@ import lombok.SneakyThrows;
 import lombok.ToString;
 import org.postgresql.ds.PGSimpleDataSource;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 @ToString
 public class FoundryContext {
 
@@ -18,6 +20,8 @@ public class FoundryContext {
 
     @SneakyThrows
     public FoundryContext(FoundryConfiguration foundryConfiguration) {
+        requireNotNullArgument(foundryConfiguration, "foundryConfiguration");
+
         this.persisterRegistry = new PersisterRegistry(foundryConfiguration.scanningRoots());
 
         var dataSource = new PGSimpleDataSource();

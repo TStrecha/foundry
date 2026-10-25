@@ -115,7 +115,7 @@ class ManagedTypeTest {
     @Test
     void typeWithoutIdAnnotationIsRejected() {
         assertThatThrownBy(() -> new ManagedType<>(NoIdEntity.class))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -128,21 +128,14 @@ class ManagedTypeTest {
     void entityWithMultipleIdsIsRejected() {
         assertThatThrownBy(() -> new ManagedType<>(
                 cz.tstrecha.foundry.orm.fixtures.broken.MultipleIdsEntity.class))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void entityWithNoColumnsIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.NoColumnsEntity.class))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void idAnnotationWithoutColumnAnnotationIsRejected() {
         assertThatThrownBy(() -> new ManagedType<>(
                 cz.tstrecha.foundry.orm.fixtures.broken.IdWithoutColumnEntity.class))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 @RequiredArgsConstructor
 public class SelectOperationResult implements DatabaseOperationResult {
 
@@ -21,6 +23,8 @@ public class SelectOperationResult implements DatabaseOperationResult {
     private final ResultSet resultSet;
 
     public <T> Optional<T> mapToObject(RowMapper<T> rowMapper) throws SQLException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        requireNotNullArgument(rowMapper, "rowMapper");
+
         if(resultSet.next()) {
             var entity = rowMapper.map(resultSet);
 
@@ -35,6 +39,8 @@ public class SelectOperationResult implements DatabaseOperationResult {
     }
 
     public <T> List<T> mapToObjects(RowMapper<T> rowMapper) throws SQLException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        requireNotNullArgument(rowMapper, "rowMapper");
+
         var mappedObjects = new ArrayList<T>();
         while (resultSet.next()) {
             mappedObjects.add(rowMapper.map(resultSet));
@@ -45,7 +51,10 @@ public class SelectOperationResult implements DatabaseOperationResult {
     @Override
     @SneakyThrows
     public void close() {
-        resultSet.close();
-        statement.close();
+        try {
+            resultSet.close();
+        } finally {
+            statement.close();
+        }
     }
 }

@@ -119,15 +119,39 @@ class CrudIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void persistEntityWithNullIdIsRejected() throws Exception {
+    void persistEntityWithNullIdAssignsGeneratedId() throws Exception {
+        BookEntity persisted;
         try (var em = context.openSession()) {
             em.getTransaction().begin();
-            var b = book(1L, "A", Genre.FICTION, 1L);
+            var b = book(0L, "A", Genre.FICTION, 1L);
             b.setId(null);
-            assertThatThrownBy(() -> em.persist(b))
-                    .isInstanceOf(IllegalArgumentException.class);
-            em.getTransaction().rollback();
+            em.persist(b);
+            assertThat(b.getId()).as("id must be populated by the generator after persist").isNotNull();
+            persisted = b;
+            em.getTransaction().commit();
         }
+        try (var em = context.openSession()) {
+            assertThat(em.find(BookEntity.class, persisted.getId())).isPresent();
+        }
+    }
+
+    @Test
+    void persistingMultipleEntitiesWithNullIdAssignsDistinctIds() throws Exception {
+        Long firstId;
+        Long secondId;
+        try (var em = context.openSession()) {
+            em.getTransaction().begin();
+            var a = book(0L, "A", Genre.FICTION, 1L); a.setId(null);
+            var b = book(0L, "B", Genre.FICTION, 1L); b.setId(null);
+            em.persist(a);
+            em.persist(b);
+            firstId = a.getId();
+            secondId = b.getId();
+            em.getTransaction().commit();
+        }
+        assertThat(firstId).isNotNull();
+        assertThat(secondId).isNotNull();
+        assertThat(firstId).isNotEqualTo(secondId);
     }
 
     @Test

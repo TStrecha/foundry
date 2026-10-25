@@ -1,9 +1,7 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
 import cz.tstrecha.foundry.orm.connection.result.UpdateOperationResult;
-import lombok.RequiredArgsConstructor;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,7 +10,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyState;
+
 public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
 
     private final String table;
@@ -20,9 +20,16 @@ public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
     private List<ParameterBinder> columnValueBinders;
     private FilterBuilder filterBuilder;
 
-    public UpdateSql set(Map<String, ParameterBinder> valueSetter) {
-        this.columnsToBeSet = valueSetter.keySet();
-        this.columnValueBinders = new ArrayList<>(valueSetter.values());
+    public UpdateSql(String table) {
+        requireNotEmptyArgument(table, "table");
+        this.table = table;
+    }
+
+    public UpdateSql set(Map<String, ParameterBinder> valueSetters) {
+        requireNotEmptyArgument(valueSetters, "valueSetters");
+
+        this.columnsToBeSet = valueSetters.keySet();
+        this.columnValueBinders = new ArrayList<>(valueSetters.values());
         return this;
     }
 
@@ -33,6 +40,8 @@ public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
 
     @Override
     public String buildSql() {
+        requireNotEmptyState(columnsToBeSet, "columnsToBeSet");
+
         var setterStatement = columnsToBeSet.stream().map(column -> column + " = ?").collect(Collectors.joining(","));
 
         var sqlBuilder = new StringBuilder();
@@ -48,6 +57,8 @@ public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
 
     @Override
     public void bindParameters(PreparedStatement statement) throws SQLException {
+        requireNotEmptyState(columnValueBinders, "columnValueBinders");
+
         var i = 0;
         for(; i < columnValueBinders.size(); i++) {
             var valueBinder = columnValueBinders.get(i);

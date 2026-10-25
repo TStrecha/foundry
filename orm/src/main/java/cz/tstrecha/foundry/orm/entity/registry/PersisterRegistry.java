@@ -11,11 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public class PersisterRegistry {
 
     private final Map<Class<?>, EntityPersister<?>> persisters = new HashMap<>();
 
     public PersisterRegistry(List<Class<?>> scanningRoots) throws NoSuchMethodException {
+        requireNotNullArgument(scanningRoots, "scanningRoots");
+
         var packageNames = Stream.concat(scanningRoots.stream(), Stream.of(SystemEntities.class))
                 .map(Class::getPackageName)
                 .toArray(String[]::new);
@@ -36,8 +40,14 @@ public class PersisterRegistry {
         }
     }
 
+    public boolean persisterExists(Class<?> entityType) {
+        return persisters.containsKey(entityType);
+    }
+
     @SuppressWarnings("unchecked")
     public <T> EntityPersister<T> getPersister(Class<T> type) {
+        requireNotNullArgument(type, "type");
+
         return (EntityPersister<T>) persisters.get(type);
     }
 }

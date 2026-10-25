@@ -4,11 +4,15 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public class TypeHandlerResolver {
 
     private static final Map<Type, TypeHandler<?>> handlerLookupMap = new HashMap<>();
 
     public static TypeHandler<?> findHandlerForType(Class<?> type) {
+        requireNotNullArgument(type, "type");
+
         return handlerLookupMap.computeIfAbsent(type, TypeHandlerResolver::resolveForType);
     }
 

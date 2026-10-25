@@ -1,12 +1,7 @@
 package cz.tstrecha.foundry.orm.entity;
 
-import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
-import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
-import cz.tstrecha.foundry.orm.entity.registry.EntityPersister;
-import cz.tstrecha.foundry.orm.entity.registry.ManagedType;
 import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
-import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.EntitiesMarker;
 import org.junit.jupiter.api.Test;
@@ -14,13 +9,10 @@ import org.junit.jupiter.api.Test;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class EntityManagerUnitTest {
@@ -117,7 +109,7 @@ class EntityManagerUnitTest {
     @Test
     void nullProviderInConstructorIsRejected() throws Exception {
         var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
-        assertThatThrownBy(() -> new EntityManager((ConnectionProvider) null, registry))
+        assertThatThrownBy(() -> new EntityManager(null, registry))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

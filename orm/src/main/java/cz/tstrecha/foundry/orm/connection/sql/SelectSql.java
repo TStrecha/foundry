@@ -1,23 +1,38 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
 import cz.tstrecha.foundry.orm.connection.result.SelectOperationResult;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyState;
+
 @ToString
-@RequiredArgsConstructor
 public class SelectSql implements ExecutableQuery<SelectOperationResult> {
 
     private final Collection<String> columns;
     private String table;
     private FilterBuilder filterBuilder;
 
+    public SelectSql(Collection<String> columns) {
+        requireNotEmptyArgument(columns, "columns");
+        if(columns.stream().anyMatch(column -> column.contains(","))) {
+            throw new IllegalArgumentException("columns cannot contain commas");
+        }
+
+        this.columns = columns;
+    }
+
     public SelectSql from(String table) {
+        requireNotEmptyArgument(table, "table");
+        if(table.contains(";")) {
+            throw new IllegalArgumentException("table cannot contain a semicolon");
+        }
+
         this.table = table;
         return this;
     }
@@ -29,6 +44,12 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
 
     @Override
     public String buildSql() {
+        requireNotEmptyState(table, "table");
+        requireNotEmptyState(columns, "columns");
+        if(StringUtils.isBlank(table)) {
+            throw new IllegalArgumentException("Table name cannot be empty");
+        }
+
         var sqlBuilder = new StringBuilder();
         sqlBuilder.append("SELECT ").append(String.join(",", columns));
         sqlBuilder.append(" FROM ").append(table);

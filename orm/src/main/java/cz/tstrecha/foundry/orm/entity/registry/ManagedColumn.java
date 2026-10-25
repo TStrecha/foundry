@@ -10,6 +10,9 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
+
 @ToString
 public class ManagedColumn<E, F> {
 
@@ -21,6 +24,9 @@ public class ManagedColumn<E, F> {
     private final Class<F> fieldType;
 
     public ManagedColumn(String columnLabel, Field field) {
+        requireNotEmptyArgument(columnLabel, "columnLabel");
+        requireNotNullArgument(field, "field");
+
         this.columnLabel = columnLabel;
         this.field = field;
         this.field.setAccessible(true);
@@ -44,6 +50,8 @@ public class ManagedColumn<E, F> {
     }
 
     public F getFieldValue(E entity) {
+        requireNotNullArgument(entity, "entity");
+
         try {
             return (F) field.get(entity);
         } catch (IllegalAccessException e) {

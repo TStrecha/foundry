@@ -6,9 +6,10 @@ import lombok.Getter;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
 @Getter
 public class EntityPersistenceBag<T> {
@@ -16,13 +17,17 @@ public class EntityPersistenceBag<T> {
     private final EntityKey<T> key;
     private final T entity;
     private final ManagedType<T> managedType;
-    private final List<?> snapshot;
+    private List<?> snapshot;
 
     public EntityPersistenceBag(EntityKey<T> key, T entity, ManagedType<T> managedType) {
+        requireNotNullArgument(key, "key");
+        requireNotNullArgument(entity, "entity");
+        requireNotNullArgument(managedType, "managedType");
+
         this.key = key;
         this.entity = entity;
         this.managedType = managedType;
-        this.snapshot = Collections.unmodifiableList(managedType.createEntitySnapshot(entity));
+        this.snapshot = managedType.createEntitySnapshot(entity);
     }
 
     @Nullable
@@ -43,6 +48,8 @@ public class EntityPersistenceBag<T> {
         if(dirtyColumns.isEmpty()) {
             return null;
         }
+
+        this.snapshot = current;
 
         return new DirtyEntityBag<>(getKey(), getEntity(), dirtyColumns);
     }

@@ -2,7 +2,6 @@ package cz.tstrecha.foundry.orm.entity.registry;
 
 import cz.tstrecha.foundry.orm.connection.sql.FilterBuilder;
 import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
-import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
 import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
 import cz.tstrecha.foundry.orm.connection.sql.SqlOperator;
 import cz.tstrecha.foundry.orm.connection.sql.UpdateSql;
@@ -17,6 +16,8 @@ import java.util.stream.Collectors;
 import static cz.tstrecha.foundry.orm.connection.sql.Sql.insert;
 import static cz.tstrecha.foundry.orm.connection.sql.Sql.select;
 import static cz.tstrecha.foundry.orm.connection.sql.Sql.update;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
 
 public class EntityPersister<T> {
 
@@ -25,11 +26,15 @@ public class EntityPersister<T> {
     private final Class<T> type;
 
     public EntityPersister(ManagedType<T> managedType) {
+        requireNotNullArgument(managedType, "managedType");
+
         this.managedType = managedType;
         this.type = managedType.getType();
     }
 
     public SelectSql generateSelectById(Object id) {
+        requireNotNullArgument(id, "id");
+
         var idColumn = managedType.getIdColumn();
         var idBinder = idColumn.binderForAnyValue(id);
 
@@ -40,6 +45,8 @@ public class EntityPersister<T> {
 
     @SneakyThrows
     public InsertSql generateInsert(Object entity) {
+        requireNotNullArgument(entity, "entity");
+
         var typedEntity = type.cast(entity);
         var values = managedType.getValueBindersForEntity(typedEntity);
 
@@ -50,6 +57,10 @@ public class EntityPersister<T> {
 
     @SneakyThrows
     public UpdateSql generateUpdate(Object id, Object entity, List<ManagedColumn<T, ?>> columns) {
+        requireNotNullArgument(id, "id");
+        requireNotNullArgument(entity, "entity");
+        requireNotEmptyArgument(columns, "columns");
+
         var typedEntity = type.cast(entity);
         var valueSetters = columns.stream()
                 .collect(Collectors.toMap(
@@ -69,6 +80,8 @@ public class EntityPersister<T> {
     }
 
     public EntityKey<T> buildEntityKey(T entity) {
+        requireNotNullArgument(entity, "entity");
+
         var key = managedType.extractKeyFromEntity(entity);
         return new EntityKey<>(type, key);
     }

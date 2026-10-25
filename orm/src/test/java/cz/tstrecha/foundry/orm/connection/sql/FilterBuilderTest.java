@@ -58,18 +58,46 @@ class FilterBuilderTest {
     }
 
     @Test
-    void nullOperatorThrows() {
+    void nullOperatorIsRejected() {
         assertThatThrownBy(() -> new FilterBuilder("a", null, (stmt, i) -> stmt.setLong(i, 1L)))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void columnLabelContainingQuoteIsEscapedOrRejected() {
-        var fb = new FilterBuilder("a\" OR 1=1 --", SqlOperator.EQUALS,
-                (stmt, i) -> stmt.setLong(i, 1L));
-        assertThat(fb.getClause().toString())
-                .as("column names in WHERE clauses must not permit injection")
-                .doesNotContain("OR 1=1");
+    void columnLabelContainingQuoteIsRejected() {
+        assertThatThrownBy(() -> new FilterBuilder("a\" OR 1=1 --", SqlOperator.EQUALS,
+                (stmt, i) -> stmt.setLong(i, 1L)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void columnLabelContainingSemicolonIsRejected() {
+        assertThatThrownBy(() -> new FilterBuilder("name; DROP TABLE users", SqlOperator.EQUALS,
+                (stmt, i) -> stmt.setLong(i, 1L)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void columnLabelStartingWithDigitIsRejected() {
+        assertThatThrownBy(() -> new FilterBuilder("1name", SqlOperator.EQUALS,
+                (stmt, i) -> stmt.setLong(i, 1L)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void andRejectsInvalidColumnLabel() {
+        var fb = new FilterBuilder("a", SqlOperator.EQUALS, (stmt, i) -> stmt.setLong(i, 1L));
+        assertThatThrownBy(() -> fb.and("b\" OR 1=1 --", SqlOperator.EQUALS,
+                (stmt, i) -> stmt.setLong(i, 2L)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void orRejectsInvalidColumnLabel() {
+        var fb = new FilterBuilder("a", SqlOperator.EQUALS, (stmt, i) -> stmt.setLong(i, 1L));
+        assertThatThrownBy(() -> fb.or("b; DROP TABLE t", SqlOperator.EQUALS,
+                (stmt, i) -> stmt.setLong(i, 2L)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

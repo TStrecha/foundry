@@ -92,8 +92,8 @@ class UpdateSqlTest {
 
     @Test
     void emptySetMapIsRejected() {
-        var sql = new UpdateSql("book").set(Map.of());
-        assertThatThrownBy(sql::buildSql).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new UpdateSql("book").set(Map.of()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

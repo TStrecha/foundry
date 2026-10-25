@@ -40,11 +40,9 @@ class ManagedTypeCreatorTest {
 
     @Test
     void abstractClassIsRejectedWithClearError() {
-        assertThatThrownBy(() -> {
-            var creator = new ManagedTypeCreator<>(
-                    cz.tstrecha.foundry.orm.fixtures.broken.AbstractEntity.class);
-            creator.createNewEmptyInstance();
-        }).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ManagedTypeCreator<>(
+                cz.tstrecha.foundry.orm.fixtures.broken.AbstractEntity.class))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public class DBSession implements Closeable {
 
     private final ConnectionProvider connectionProvider;
@@ -24,12 +26,17 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public DBSession(ConnectionProvider connectionProvider) {
+        requireNotNullArgument(connectionProvider, "connectionProvider");
+
         this.connectionProvider = connectionProvider;
         this.transaction = new Transaction(connectionProvider.acquireConnection());
     }
 
     @SneakyThrows
     public <T> List<T> selectAll(SelectSql sql, RowMapperBuilder<T> mapperBuilder) {
+        requireNotNullArgument(sql, "sql");
+        requireNotNullArgument(mapperBuilder, "mapperBuilder");
+
         try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
             var columnLabels = extractColumnNames(operationResult.getResultSet().getMetaData());
             var mappingFunction = mapperBuilder.buildMapper(columnLabels);
@@ -50,6 +57,8 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public int insert(InsertSql sql) {
+        requireNotNullArgument(sql, "sql");
+
         try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
             return operationResult.getRowsCreated();
         }
@@ -57,6 +66,8 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public int update(UpdateSql sql) {
+        requireNotNullArgument(sql, "sql");
+
         try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
             return operationResult.getRowsCreated();
         }
@@ -75,6 +86,9 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public void close() {
+        if(connectionProvider.isConnected() && transaction.isActive()) {
+            transaction.rollback();
+        }
         connectionProvider.close();
     }
 }

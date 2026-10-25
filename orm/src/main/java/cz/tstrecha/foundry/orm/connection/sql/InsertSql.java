@@ -2,12 +2,14 @@ package cz.tstrecha.foundry.orm.connection.sql;
 
 import cz.tstrecha.foundry.orm.connection.result.UpdateOperationResult;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.*;
 
 public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
 
@@ -16,17 +18,36 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
     private List<ParameterBinder> valueBinders;
 
     public InsertSql into(String table, Collection<String> columns) {
+        requireNotEmptyArgument(table, "table");
+        requireNotNullArgument(columns, "columns");
+        if(table.contains(";")) {
+            throw new IllegalArgumentException("Table cannot contain ';'");
+        }
+
         this.table = table;
         this.columns = columns;
         return this;
     }
+
     public InsertSql values(List<ParameterBinder> valueBinders) {
+        requireNotNullArgument(valueBinders, "valueBinders");
+        if(valueBinders.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("valueBinders cannot contain null value");
+        }
+
         this.valueBinders = valueBinders;
         return this;
     }
 
     @Override
     public String buildSql() {
+        requireNotEmptyState(table, "table");
+        requireNotEmptyState(columns, "columns");
+        requireNotEmptyState(valueBinders, "valueBinders");
+        if(columns.size() != valueBinders.size()) {
+            throw new IllegalStateException("Columns and value sizes are not equal");
+        }
+
         var columnStatement = String.join(",", columns);
         var valuePlaceholders = valueBinders.stream().map(_ -> "?").collect(Collectors.joining(","));
 

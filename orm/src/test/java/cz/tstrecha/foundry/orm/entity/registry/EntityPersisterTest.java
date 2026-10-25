@@ -100,7 +100,7 @@ class EntityPersisterTest {
         var book = new BookEntity();
         book.setId(1L);
         assertThatThrownBy(() -> persister.generateUpdate(null, book,
-                List.of((ManagedColumn<BookEntity, ?>) persister.getManagedType().getIdColumn())))
+                List.of(persister.getManagedType().getIdColumn())))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

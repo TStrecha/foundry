@@ -36,8 +36,8 @@ class SqlTest {
 
     @Test
     void selectWithoutColumnsIsRejected() {
-        assertThatThrownBy(() -> Sql.select().from("t").buildSql())
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> Sql.select().from("t"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

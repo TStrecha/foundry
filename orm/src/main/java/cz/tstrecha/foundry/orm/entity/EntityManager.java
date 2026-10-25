@@ -6,6 +6,7 @@ import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.context.DirtyEntityBag;
 import cz.tstrecha.foundry.orm.entity.context.EntityPersistenceBag;
 import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
+import cz.tstrecha.foundry.orm.entity.registry.EntityPersister;
 import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
@@ -22,12 +23,26 @@ public class EntityManager implements Closeable {
     private final PersistenceContext persistenceContext;
 
     public EntityManager(ConnectionProvider connectionProvider, PersisterRegistry persisterRegistry) {
+        if(connectionProvider == null) {
+            throw new IllegalArgumentException("connectionProvider is null");
+        }
+        if(persisterRegistry == null) {
+            throw new IllegalArgumentException("persisterRegistry is null");
+        }
+
         this.session = new DBSession(connectionProvider);
         this.persisterRegistry = persisterRegistry;
         this.persistenceContext = new PersistenceContext();
     }
 
     public <T, ID> Optional<T> find(Class<T> entityType, ID id) {
+        if(entityType == null) {
+            throw new IllegalArgumentException("entityType is null");
+        }
+        if(!persisterRegistry.persisterExists(entityType)) {
+            throw new IllegalArgumentException("No persister found for type " + entityType.getName());
+        }
+
         var cached = persistenceContext.getByKey(entityType, id);
         if(cached.isPresent()) {
             return cached.map(EntityPersistenceBag::getEntity);
@@ -43,6 +58,13 @@ public class EntityManager implements Closeable {
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
+        if(entityType == null) {
+            throw new IllegalArgumentException("entityType is null");
+        }
+        if(!persisterRegistry.persisterExists(entityType)) {
+            throw new IllegalArgumentException("No persister found for type " + entityType.getName());
+        }
+
         var entityPersister = persisterRegistry.getPersister(entityType);
         var sql = entityPersister.generateSelect();
 
@@ -52,15 +74,25 @@ public class EntityManager implements Closeable {
         return entities;
     }
 
-    public void persist(Object entity) {
+    public <T> void persist(T entity) {
+        if(entity == null) {
+            throw new IllegalArgumentException("entity is null");
+        }
+
         var entityType = entity.getClass();
+        if(!persisterRegistry.persisterExists(entityType)) {
+            throw new IllegalArgumentException("No persister found for type " + entityType.getName());
+        }
+
         var entityPersister = persisterRegistry.getPersister(entityType);
-        var sql = entityPersister.generateInsert(entityPersister.getManagedType().getType().cast(entity));
+        var sql = entityPersister.generateInsert(entity);
 
         var rowsCreated = session.insert(sql);
         if(rowsCreated != 1) {
             throw new IllegalStateException("Database created 0 new rows.");
         }
+
+        persistenceContext.makeEntityHandled((EntityPersister<T>) entityPersister, entity);
     }
 
     public void flush() {
@@ -79,6 +111,10 @@ public class EntityManager implements Closeable {
     }
 
     public void runInTransaction(TransactionRunnable runnable) {
+        if(runnable == null) {
+            throw new IllegalArgumentException("runnable is null");
+        }
+
         var tx = getTransaction();
         try {
             tx.begin();
@@ -90,7 +126,7 @@ public class EntityManager implements Closeable {
                 tx.rollback();
                 throw new RuntimeException(ex);
             } catch (SQLException rollbackEx) {
-                throw new RuntimeException(rollbackEx);
+                throw new RuntimeException(ex);
             }
         }
     }

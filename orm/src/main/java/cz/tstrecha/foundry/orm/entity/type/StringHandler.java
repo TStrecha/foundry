@@ -1,18 +1,21 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class StringHandler implements TypeHandler<String> {
 
     @Override
-    public String read(ResultSet resultSet, int index) throws SQLException {
+    public String readValue(ResultSet resultSet, int index) throws SQLException {
         return resultSet.getString(index);
     }
 
     @Override
-    public void write(PreparedStatement statement, int index, String value) throws SQLException {
+    public void writeValue(PreparedStatement statement, int index, String value) throws SQLException {
         statement.setString(index, value);
+    }
+
+    @Override
+    public void writeNull(PreparedStatement statement, int index) throws SQLException {
+        statement.setString(index, null);
     }
 }

@@ -56,8 +56,8 @@ class SelectSqlTest {
 
     @Test
     void buildWithNullColumnsIsRejected() {
-        var sql = new SelectSql(null).from("t");
-        assertThatThrownBy(sql::buildSql).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new SelectSql(null).from("t"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

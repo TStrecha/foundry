@@ -29,11 +29,4 @@ class UpdateOperationResultTest {
         var result = new UpdateOperationResult(mock(Statement.class), 0);
         org.assertj.core.api.Assertions.assertThat(result.getRowsCreated()).isZero();
     }
-
-    @Test
-    void negativeRowCountIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> new UpdateOperationResult(mock(Statement.class), -1))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
 }

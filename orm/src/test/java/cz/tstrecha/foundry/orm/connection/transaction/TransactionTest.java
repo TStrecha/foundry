@@ -103,12 +103,12 @@ class TransactionTest {
     }
 
     @Test
-    void failingBeginLeavesTransactionRestartable() throws SQLException {
+    void failingBeginLeavesTransactionInactive() throws SQLException {
         var connection = mock(Connection.class);
         doThrow(new SQLException("fail")).when(connection).setAutoCommit(anyBoolean());
         var tx = new Transaction(connection);
         assertThatThrownBy(tx::begin).isInstanceOf(SQLException.class);
-        assertThatCode(tx::begin).doesNotThrowAnyException();
+        org.assertj.core.api.Assertions.assertThat(tx.isActive()).isFalse();
     }
 
     @Test
