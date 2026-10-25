@@ -13,8 +13,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -95,7 +97,7 @@ class DBSessionTest {
         when(stmt.executeUpdate()).thenReturn(1);
 
         var session = new DBSession(new ConnectionProvider(ds));
-        var update = new UpdateSql("t").set(java.util.Map.of("a", (s, i) -> s.setLong(i, 1L)));
+        var update = new UpdateSql("t").set(Map.of("a", (s, i) -> s.setLong(i, 1L)));
         assertThat(session.update(update)).isEqualTo(1);
     }
 
@@ -123,7 +125,7 @@ class DBSessionTest {
 
     @Test
     void nullProviderIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new DBSession(null))
+        assertThatThrownBy(() -> new DBSession(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -133,7 +135,7 @@ class DBSessionTest {
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
         var session = new DBSession(new ConnectionProvider(ds));
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> session.selectAll(null, columns -> r -> null))
+        assertThatThrownBy(() -> session.selectAll(null, columns -> r -> null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -144,7 +146,7 @@ class DBSessionTest {
         when(ds.getConnection()).thenReturn(conn);
         var session = new DBSession(new ConnectionProvider(ds));
         var select = new SelectSql(List.of("v")).from("t");
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> session.selectAll(select, null))
+        assertThatThrownBy(() -> session.selectAll(select, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -154,7 +156,7 @@ class DBSessionTest {
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
         var session = new DBSession(new ConnectionProvider(ds));
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> session.insert(null))
+        assertThatThrownBy(() -> session.insert(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -164,7 +166,7 @@ class DBSessionTest {
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
         var session = new DBSession(new ConnectionProvider(ds));
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> session.update(null))
+        assertThatThrownBy(() -> session.update(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

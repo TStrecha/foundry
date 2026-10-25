@@ -27,6 +27,6 @@ class UpdateOperationResultTest {
     @Test
     void acceptsZeroRows() {
         var result = new UpdateOperationResult(mock(Statement.class), 0);
-        org.assertj.core.api.Assertions.assertThat(result.getRowsCreated()).isZero();
+        assertThat(result.getRowsCreated()).isZero();
     }
 }

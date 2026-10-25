@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
 import java.sql.PreparedStatement;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -87,7 +88,7 @@ class InsertSqlTest {
     void valuesWithNullBinderInListIsRejected() {
         assertThatThrownBy(() -> new InsertSql()
                 .into("t", List.of("a"))
-                .values(java.util.Arrays.asList((ParameterBinder) null)))
+                .values(Arrays.asList((ParameterBinder) null)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

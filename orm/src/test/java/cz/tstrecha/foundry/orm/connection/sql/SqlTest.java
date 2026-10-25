@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.connection.sql;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +31,7 @@ class SqlTest {
 
     @Test
     void updateBuildsSqlWithoutWhere() {
-        var upd = Sql.update("t").set(java.util.Map.of("a", (stmt, idx) -> stmt.setLong(idx, 1L)));
+        var upd = Sql.update("t").set(Map.of("a", (stmt, idx) -> stmt.setLong(idx, 1L)));
         assertThat(upd.buildSql()).isEqualTo("UPDATE t SET a = ?");
     }
 
@@ -55,13 +56,13 @@ class SqlTest {
 
     @Test
     void updateWithNullTableIsRejected() {
-        assertThatThrownBy(() -> Sql.update(null).set(java.util.Map.of("a", (stmt, i) -> stmt.setLong(i, 1L))).buildSql())
+        assertThatThrownBy(() -> Sql.update(null).set(Map.of("a", (stmt, i) -> stmt.setLong(i, 1L))).buildSql())
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void updateWithBlankTableIsRejected() {
-        assertThatThrownBy(() -> Sql.update("   ").set(java.util.Map.of("a", (stmt, i) -> stmt.setLong(i, 1L))).buildSql())
+        assertThatThrownBy(() -> Sql.update("   ").set(Map.of("a", (stmt, i) -> stmt.setLong(i, 1L))).buildSql())
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

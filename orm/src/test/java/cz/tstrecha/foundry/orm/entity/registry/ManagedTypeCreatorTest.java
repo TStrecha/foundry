@@ -1,7 +1,9 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
-import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
+import cz.tstrecha.foundry.orm.fixtures.broken.AbstractEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoDefaultConstructorEntity;
+import cz.tstrecha.foundry.orm.fixtures.broken.PrivateConstructorEntity;
+import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,15 +35,13 @@ class ManagedTypeCreatorTest {
 
     @Test
     void supportsEntityWithPrivateNoArgsConstructor() throws Exception {
-        var creator = new ManagedTypeCreator<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.PrivateConstructorEntity.class);
+        var creator = new ManagedTypeCreator<>(PrivateConstructorEntity.class);
         assertThat(creator.createNewEmptyInstance()).isNotNull();
     }
 
     @Test
     void abstractClassIsRejectedWithClearError() {
-        assertThatThrownBy(() -> new ManagedTypeCreator<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.AbstractEntity.class))
+        assertThatThrownBy(() -> new ManagedTypeCreator<>(AbstractEntity.class))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

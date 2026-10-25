@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 class FilterBuilderTest {
 
@@ -47,7 +48,7 @@ class FilterBuilderTest {
         var fb = new FilterBuilder("a", SqlOperator.EQUALS, (stmt, i) -> stmt.setString(i, "A"));
         var stmt = mock(PreparedStatement.class);
         fb.getParameters().get(0).bind(stmt, 7);
-        org.mockito.Mockito.verify(stmt).setString(7, "A");
+        verify(stmt).setString(7, "A");
     }
 
     @Test

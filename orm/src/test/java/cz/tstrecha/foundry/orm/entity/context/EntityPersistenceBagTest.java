@@ -6,6 +6,7 @@ import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EntityPersistenceBagTest {
 
@@ -86,7 +87,7 @@ class EntityPersistenceBagTest {
     @Test
     void nullEntityInConstructorIsRejected() throws Exception {
         var mt = new ManagedType<>(BookEntity.class);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), null, mt))
                 .isInstanceOf(IllegalArgumentException.class);
     }
@@ -94,14 +95,14 @@ class EntityPersistenceBagTest {
     @Test
     void nullKeyInConstructorIsRejected() throws Exception {
         var mt = new ManagedType<>(BookEntity.class);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         new EntityPersistenceBag<>(null, book(), mt))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void nullManagedTypeInConstructorIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book(), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }

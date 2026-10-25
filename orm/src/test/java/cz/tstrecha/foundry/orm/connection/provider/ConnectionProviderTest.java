@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -67,7 +68,7 @@ class ConnectionProviderTest {
 
     @Test
     void nullDataSourceIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new ConnectionProvider(null))
+        assertThatThrownBy(() -> new ConnectionProvider(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -76,7 +77,7 @@ class ConnectionProviderTest {
         var ds = mock(DataSource.class);
         when(ds.getConnection()).thenThrow(new SQLException("down"));
         var provider = new ConnectionProvider(ds);
-        org.assertj.core.api.Assertions.assertThatThrownBy(provider::acquireConnection)
+        assertThatThrownBy(provider::acquireConnection)
                 .isInstanceOf(SQLException.class)
                 .hasMessageContaining("down");
     }

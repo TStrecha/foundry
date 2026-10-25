@@ -8,10 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,7 +96,7 @@ class EntityManagerUnitTest {
         var ds = mock(DataSource.class);
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
-        org.mockito.Mockito.doThrow(new java.sql.SQLException("rollback failed")).when(conn).rollback();
+        doThrow(new SQLException("rollback failed")).when(conn).rollback();
         var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
         try (var em = new EntityManager(new ConnectionProvider(ds), registry)) {
             var original = new RuntimeException("original");

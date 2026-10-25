@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -30,7 +31,7 @@ class LongHandlerTest {
     void writeMapsJavaNullToSqlNull() throws Exception {
         var stmt = mock(PreparedStatement.class);
         new LongHandler().write(stmt, 1, null);
-        verify(stmt).setNull(1, java.sql.Types.BIGINT);
+        verify(stmt).setNull(1, Types.BIGINT);
     }
 
     @Test

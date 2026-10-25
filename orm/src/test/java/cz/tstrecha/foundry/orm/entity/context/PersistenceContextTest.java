@@ -4,9 +4,11 @@ import cz.tstrecha.foundry.orm.entity.registry.EntityPersister;
 import cz.tstrecha.foundry.orm.entity.registry.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
+import cz.tstrecha.foundry.orm.fixtures.good.PersonEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PersistenceContextTest {
 
@@ -79,30 +81,26 @@ class PersistenceContextTest {
 
     @Test
     void getByKeyWithNullTypeIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> new PersistenceContext().getByKey(null, 1L))
+        assertThatThrownBy(() -> new PersistenceContext().getByKey(null, 1L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void getByKeyWithNullKeyIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> new PersistenceContext().getByKey(BookEntity.class, null))
+        assertThatThrownBy(() -> new PersistenceContext().getByKey(BookEntity.class, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void makeEntityHandledWithNullPersisterIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> new PersistenceContext().makeEntityHandled(null, book(1L)))
+        assertThatThrownBy(() -> new PersistenceContext().makeEntityHandled(null, book(1L)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void makeEntityHandledWithNullEntityIsRejected() throws Exception {
         var persister = bookPersister();
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                        () -> new PersistenceContext().makeEntityHandled(persister, null))
+        assertThatThrownBy(() -> new PersistenceContext().makeEntityHandled(persister, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -110,19 +108,16 @@ class PersistenceContextTest {
     void sameKeyValueAcrossTypesIsIsolated() throws Exception {
         var ctx = new PersistenceContext();
         var bookPersister = bookPersister();
-        var personPersister = new cz.tstrecha.foundry.orm.entity.registry.EntityPersister<>(
-                new cz.tstrecha.foundry.orm.entity.registry.ManagedType<>(
-                        cz.tstrecha.foundry.orm.fixtures.good.PersonEntity.class));
+        var personPersister = new EntityPersister<>(new ManagedType<>(PersonEntity.class));
 
         var b = book(1L);
-        var p = new cz.tstrecha.foundry.orm.fixtures.good.PersonEntity();
+        var p = new PersonEntity();
         p.setId(1L); p.setFirstName("A"); p.setLastName("B");
 
         ctx.makeEntityHandled(bookPersister, b);
         ctx.makeEntityHandled(personPersister, p);
 
         assertThat(ctx.getByKey(BookEntity.class, 1L).orElseThrow().getEntity()).isSameAs(b);
-        assertThat(ctx.getByKey(cz.tstrecha.foundry.orm.fixtures.good.PersonEntity.class, 1L)
-                .orElseThrow().getEntity()).isSameAs(p);
+        assertThat(ctx.getByKey(PersonEntity.class, 1L).orElseThrow().getEntity()).isSameAs(p);
     }
 }

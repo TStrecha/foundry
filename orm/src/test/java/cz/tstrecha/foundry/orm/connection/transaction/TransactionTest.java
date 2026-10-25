@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -108,7 +109,7 @@ class TransactionTest {
         doThrow(new SQLException("fail")).when(connection).setAutoCommit(anyBoolean());
         var tx = new Transaction(connection);
         assertThatThrownBy(tx::begin).isInstanceOf(SQLException.class);
-        org.assertj.core.api.Assertions.assertThat(tx.isActive()).isFalse();
+        assertThat(tx.isActive()).isFalse();
     }
 
     @Test

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,7 +48,7 @@ class EnumHandlerTest {
     void writeMapsJavaNullToSqlNull() throws Exception {
         var stmt = mock(PreparedStatement.class);
         new EnumHandler<>(Genre.class).write(stmt, 1, null);
-        verify(stmt).setNull(1, java.sql.Types.VARCHAR);
+        verify(stmt).setNull(1, Types.VARCHAR);
     }
 
     @Test

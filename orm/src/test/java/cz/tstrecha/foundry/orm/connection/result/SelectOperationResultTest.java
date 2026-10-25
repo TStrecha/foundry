@@ -3,11 +3,13 @@ package cz.tstrecha.foundry.orm.connection.result;
 import org.junit.jupiter.api.Test;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,7 +95,7 @@ class SelectOperationResultTest {
     void closeStillClosesStatementWhenResultSetCloseFails() throws Exception {
         var rs = mock(ResultSet.class);
         var stmt = mock(Statement.class);
-        org.mockito.Mockito.doThrow(new java.sql.SQLException("boom")).when(rs).close();
+        doThrow(new SQLException("boom")).when(rs).close();
         var result = new SelectOperationResult(stmt, rs);
         try {
             result.close();

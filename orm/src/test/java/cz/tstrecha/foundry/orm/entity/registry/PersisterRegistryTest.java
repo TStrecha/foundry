@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PersisterRegistryTest {
 
@@ -39,14 +40,14 @@ class PersisterRegistryTest {
 
     @Test
     void nullScanningRootsIsRejected() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> new PersisterRegistry(null))
+        assertThatThrownBy(() -> new PersisterRegistry(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void getPersisterWithNullTypeIsRejected() throws Exception {
         var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> registry.getPersister(null))
+        assertThatThrownBy(() -> registry.getPersister(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

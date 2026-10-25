@@ -1,9 +1,13 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
+import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,7 +41,7 @@ class TypeHandlerResolverTest {
 
     @Test
     void unsupportedTypeThrows() {
-        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(LocalDate.class))
+        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(FoundryConfiguration.class))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -49,32 +53,37 @@ class TypeHandlerResolverTest {
 
     @Test
     void integerIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Integer.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Integer.class))
+                .isInstanceOf(IntegerHandler.class);
     }
 
     @Test
     void booleanIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Boolean.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Boolean.class))
+                .isInstanceOf(BooleanHandler.class);
     }
 
     @Test
     void doubleIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Double.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Double.class))
+                .isInstanceOf(DoubleHandler.class);
     }
 
     @Test
     void bigDecimalIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(java.math.BigDecimal.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(BigDecimal.class))
+                .isInstanceOf(BigDecimalHandler.class);
     }
 
     @Test
     void uuidIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(java.util.UUID.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(UUID.class))
+                .isInstanceOf(UUIDHandler.class);
     }
 
     @Test
     void instantIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(java.time.Instant.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Instant.class)).isNotNull();
     }
 
     @Test
@@ -84,7 +93,8 @@ class TypeHandlerResolverTest {
 
     @Test
     void byteArrayIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(byte[].class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(byte[].class))
+                .isInstanceOf(ByteArrayHandler.class);
     }
 
     @Test

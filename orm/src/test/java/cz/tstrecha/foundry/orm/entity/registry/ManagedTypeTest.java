@@ -1,6 +1,9 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.broken.ChildWithInheritedColumnEntity;
+import cz.tstrecha.foundry.orm.fixtures.broken.IdWithoutColumnEntity;
+import cz.tstrecha.foundry.orm.fixtures.broken.MultipleIdsEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoIdEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoTableEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.UnsupportedTypeEntity;
@@ -14,6 +17,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -101,9 +106,9 @@ class ManagedTypeTest {
         for (int i = 0; i < binders.size(); i++) {
             binders.get(i).bind(stmt, i + 1);
         }
-        verify(stmt).setLong(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.eq(1L));
-        verify(stmt).setString(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.eq("Alice"));
-        verify(stmt).setString(org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.eq("Smith"));
+        verify(stmt).setLong(anyInt(), eq(1L));
+        verify(stmt).setString(anyInt(), eq("Alice"));
+        verify(stmt).setString(anyInt(), eq("Smith"));
     }
 
     @Test
@@ -126,29 +131,26 @@ class ManagedTypeTest {
 
     @Test
     void entityWithMultipleIdsIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.MultipleIdsEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(MultipleIdsEntity.class))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void idAnnotationWithoutColumnAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.IdWithoutColumnEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(IdWithoutColumnEntity.class))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void inheritedAnnotatedFieldsAreDiscovered() throws Exception {
-        var mt = new ManagedType<>(
-                cz.tstrecha.foundry.orm.fixtures.broken.ChildWithInheritedColumnEntity.class);
+        var mt = new ManagedType<>(ChildWithInheritedColumnEntity.class);
         assertThat(mt.getManagedColumnLabels()).contains("id", "name");
         assertThat(mt.getIdColumn().getColumnLabel()).isEqualTo("id");
     }
 
     @Test
     void managedColumnLabelsAreReturnedInInsertionOrder() throws Exception {
-        var mt = new ManagedType<>(cz.tstrecha.foundry.orm.fixtures.good.PersonEntity.class);
+        var mt = new ManagedType<>(PersonEntity.class);
         assertThat(mt.getManagedColumnLabels())
                 .as("column order must be deterministic — otherwise INSERT column list and value binders can misalign")
                 .containsExactly("id", "first_name", "last_name");
