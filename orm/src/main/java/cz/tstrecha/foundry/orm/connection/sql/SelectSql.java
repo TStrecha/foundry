@@ -8,8 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 
-import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
-import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyState;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.*;
 
 @ToString
 public class SelectSql implements ExecutableQuery<SelectOperationResult> {
@@ -20,18 +19,14 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
 
     public SelectSql(Collection<String> columns) {
         requireNotEmptyArgument(columns, "columns");
-        if(columns.stream().anyMatch(column -> column.contains(","))) {
-            throw new IllegalArgumentException("columns cannot contain commas");
-        }
+        columns.forEach(column -> requireValidSqlIdentifier(column, "column"));
 
         this.columns = columns;
     }
 
     public SelectSql from(String table) {
         requireNotEmptyArgument(table, "table");
-        if(table.contains(";")) {
-            throw new IllegalArgumentException("table cannot contain a semicolon");
-        }
+        requireValidSqlIdentifier(table, "table");
 
         this.table = table;
         return this;

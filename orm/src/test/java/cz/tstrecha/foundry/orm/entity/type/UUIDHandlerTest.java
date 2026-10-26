@@ -19,7 +19,7 @@ class UUIDHandlerTest {
     @Test
     void readValueParsesUuidFromString() throws Exception {
         var rs = mock(ResultSet.class);
-        when(rs.getString(1)).thenReturn(sample.toString());
+        when(rs.getObject(1, UUID.class)).thenReturn(sample);
         assertThat(new UUIDHandler().readValue(rs, 1)).isEqualTo(sample);
     }
 
@@ -27,7 +27,7 @@ class UUIDHandlerTest {
     void writeValueWritesUuidString() throws Exception {
         var stmt = mock(PreparedStatement.class);
         new UUIDHandler().writeValue(stmt, 2, sample);
-        verify(stmt).setString(2, sample.toString());
+        verify(stmt).setObject(2, sample);
     }
 
     @Test

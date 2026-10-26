@@ -175,8 +175,38 @@ class ValidationUtilsTest {
     }
 
     @Test
-    void requireValidSqlIdentifier_rejectsDot() {
-        assertThatThrownBy(() -> requireValidSqlIdentifier("table.column", "col"))
+    void requireValidSqlIdentifier_acceptsSchemaQualifiedTableName() {
+        assertThatCode(() -> requireValidSqlIdentifier("information_schema.columns", "table"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireValidSqlIdentifier_acceptsCatalogSchemaTableChain() {
+        assertThatCode(() -> requireValidSqlIdentifier("catalog.schema.table", "table"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void requireValidSqlIdentifier_rejectsLeadingDot() {
+        assertThatThrownBy(() -> requireValidSqlIdentifier(".table", "table"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requireValidSqlIdentifier_rejectsTrailingDot() {
+        assertThatThrownBy(() -> requireValidSqlIdentifier("table.", "table"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requireValidSqlIdentifier_rejectsConsecutiveDots() {
+        assertThatThrownBy(() -> requireValidSqlIdentifier("schema..table", "table"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void requireValidSqlIdentifier_rejectsSegmentStartingWithDigit() {
+        assertThatThrownBy(() -> requireValidSqlIdentifier("schema.1table", "table"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

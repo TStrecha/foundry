@@ -133,4 +133,30 @@ class UpdateSqlTest {
         var sql = new UpdateSql("t").set(setters).where(first).where(second);
         assertThat(sql.buildSql()).isEqualTo("UPDATE t SET title = ? WHERE \"b\" = ?");
     }
+
+    @Test
+    void tableNameContainingSemicolonIsRejected() {
+        assertThatThrownBy(() -> new UpdateSql("t; DROP TABLE users"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tableNameContainingDoubleQuoteIsRejected() {
+        assertThatThrownBy(() -> new UpdateSql("t\" OR 1=1 --"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tableNameStartingWithDigitIsRejected() {
+        assertThatThrownBy(() -> new UpdateSql("1table"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void columnNameInSetMapWithInjectionIsRejected() {
+        var setters = new LinkedHashMap<String, ParameterBinder>();
+        setters.put("a\" OR 1=1 --", (stmt, i) -> stmt.setLong(i, 1L));
+        assertThatThrownBy(() -> new UpdateSql("t").set(setters).buildSql())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -11,7 +11,8 @@ import java.util.regex.Pattern;
 @UtilityClass
 public class ValidationUtils {
 
-    private static final Pattern SQL_IDENTIFIER_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    private static final Pattern SQL_IDENTIFIER_PATTERN =
+            Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*$");
 
     public static void requireNotNullArgument(Object obj, String name) {
         requireNotNull(obj, name, ValidationType.ARGUMENT);
@@ -55,7 +56,7 @@ public class ValidationUtils {
         }
     }
 
-    public static void requireValidSqlIdentifier(String identifier, String name, ValidationType type) {
+    private static void requireValidSqlIdentifier(String identifier, String name, ValidationType type) {
         requireNotEmpty(identifier, name, type);
         if (!SQL_IDENTIFIER_PATTERN.matcher(identifier).matches()) {
             type.raiseException(name + " must be a valid SQL identifier (letters, digits, underscore; must not start with a digit): " + identifier);

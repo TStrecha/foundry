@@ -19,10 +19,10 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
 
     public InsertSql into(String table, Collection<String> columns) {
         requireNotEmptyArgument(table, "table");
+        requireValidSqlIdentifier(table, "table");
+
         requireNotNullArgument(columns, "columns");
-        if(table.contains(";")) {
-            throw new IllegalArgumentException("Table cannot contain ';'");
-        }
+        columns.forEach(column -> requireValidSqlIdentifier(column, "column"));
 
         this.table = table;
         this.columns = columns;

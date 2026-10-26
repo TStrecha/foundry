@@ -123,6 +123,20 @@ class EntityManagerUnitTest {
     }
 
     @Test
+    void runInTransactionPreservesOriginalExceptionWhenRollbackThrowsIllegalState() throws Exception {
+        try (var em = newEntityManager()) {
+            var original = new RuntimeException("business-error");
+            assertThatThrownBy(() -> em.runInTransaction(tx -> {
+                tx.rollback();           // leave the transaction inactive
+                throw original;          // triggers the catch block, which will try to rollback again
+            })).satisfiesAnyOf(
+                    ex -> assertThat(ex).hasRootCauseMessage("business-error"),
+                    ex -> assertThat(ex).cause().hasMessageContaining("business-error"),
+                    ex -> assertThat(ex.getSuppressed()).anyMatch(s -> s.getMessage().contains("business-error")));
+        }
+    }
+
+    @Test
     void flushWithoutDirtyEntitiesIsNoop() throws Exception {
         try (var em = newEntityManager()) {
             em.flush();

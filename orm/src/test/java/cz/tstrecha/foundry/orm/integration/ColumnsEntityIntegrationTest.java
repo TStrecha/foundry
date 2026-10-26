@@ -55,4 +55,12 @@ class ColumnsEntityIntegrationTest extends AbstractPostgresIntegrationTest {
             assertThat(columns).extracting(ColumnsEntity::getColumnName).contains("id", "label");
         }
     }
+
+    @Test
+    void findOnColumnsEntityWithUnknownIdReturnsEmpty() {
+        try (var em = context.openSession()) {
+            var found = em.find(ColumnsEntity.class, "no_such_table_anywhere");
+            assertThat(found).isEmpty();
+        }
+    }
 }

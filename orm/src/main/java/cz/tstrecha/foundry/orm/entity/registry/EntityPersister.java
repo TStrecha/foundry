@@ -10,6 +10,7 @@ import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,9 @@ public class EntityPersister<T> {
         var valueSetters = columns.stream()
                 .collect(Collectors.toMap(
                         ManagedColumn::getColumnLabel,
-                        column -> column.binderForEntity(typedEntity)));
+                        column -> column.binderForEntity(typedEntity),
+                        (x, _) -> x,
+                        LinkedHashMap::new));
         var idColumn = managedType.getIdColumn();
         var idBinder = idColumn.binderForAnyValue(id);
 

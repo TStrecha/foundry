@@ -171,6 +171,27 @@ class DBSessionTest {
     }
 
     @Test
+    void selectOneRejectsNullSql() throws Exception {
+        var ds = mock(DataSource.class);
+        var conn = mock(Connection.class);
+        when(ds.getConnection()).thenReturn(conn);
+        var session = new DBSession(new ConnectionProvider(ds));
+        assertThatThrownBy(() -> session.selectOne(null, columns -> r -> null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void selectOneRejectsNullMapperBuilder() throws Exception {
+        var ds = mock(DataSource.class);
+        var conn = mock(Connection.class);
+        when(ds.getConnection()).thenReturn(conn);
+        var session = new DBSession(new ConnectionProvider(ds));
+        var select = new SelectSql(List.of("v")).from("t");
+        assertThatThrownBy(() -> session.selectOne(select, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void closingSessionClosesResourcesEvenWhenNoQueriesExecuted() throws Exception {
         var ds = mock(DataSource.class);
         var conn = mock(Connection.class);

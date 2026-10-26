@@ -10,8 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
-import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyState;
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.*;
 
 public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
 
@@ -22,11 +21,14 @@ public class UpdateSql implements ExecutableQuery<UpdateOperationResult> {
 
     public UpdateSql(String table) {
         requireNotEmptyArgument(table, "table");
+        requireValidSqlIdentifier(table, "table");
+
         this.table = table;
     }
 
     public UpdateSql set(Map<String, ParameterBinder> valueSetters) {
         requireNotEmptyArgument(valueSetters, "valueSetters");
+        valueSetters.keySet().forEach(column -> requireValidSqlIdentifier(column, "column"));
 
         this.columnsToBeSet = valueSetters.keySet();
         this.columnValueBinders = new ArrayList<>(valueSetters.values());

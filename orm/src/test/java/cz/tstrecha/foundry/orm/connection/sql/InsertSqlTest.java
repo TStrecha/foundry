@@ -97,4 +97,30 @@ class InsertSqlTest {
         assertThatThrownBy(() -> new InsertSql().into("t; DROP TABLE users", List.of("a")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void tableNameContainingDoubleQuoteIsRejected() {
+        assertThatThrownBy(() -> new InsertSql().into("t\" OR 1=1 --", List.of("a")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tableNameStartingWithDigitIsRejected() {
+        assertThatThrownBy(() -> new InsertSql().into("1table", List.of("a")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void columnNameContainingDoubleQuoteIsRejected() {
+        assertThatThrownBy(() -> new InsertSql().into("t", List.of("a\" OR 1=1"))
+                .values(List.of((stmt, i) -> stmt.setLong(i, 1L))).buildSql())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void columnNameContainingSemicolonIsRejected() {
+        assertThatThrownBy(() -> new InsertSql().into("t", List.of("a; DROP"))
+                .values(List.of((stmt, i) -> stmt.setLong(i, 1L))).buildSql())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

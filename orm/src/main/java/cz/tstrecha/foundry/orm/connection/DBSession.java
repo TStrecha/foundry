@@ -47,6 +47,9 @@ public class DBSession implements Closeable {
 
     @SneakyThrows
     public <T> Optional<T> selectOne(SelectSql sql, RowMapperBuilder<T> mapperBuilder) {
+        requireNotNullArgument(sql, "sql");
+        requireNotNullArgument(mapperBuilder, "mapperBuilder");
+
         try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
             var columnLabels = extractColumnNames(operationResult.getResultSet().getMetaData());
             var mappingFunction = mapperBuilder.buildMapper(columnLabels);

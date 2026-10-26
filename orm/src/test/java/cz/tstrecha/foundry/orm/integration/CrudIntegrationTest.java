@@ -41,7 +41,7 @@ class CrudIntegrationTest extends AbstractPostgresIntegrationTest {
         execute("TRUNCATE book;");
     }
 
-    private BookEntity book(long id, String title, Genre genre, Long pages) {
+    private BookEntity book(Long id, String title, Genre genre, Long pages) {
         var b = new BookEntity();
         b.setId(id);
         b.setTitle(title);
@@ -141,8 +141,8 @@ class CrudIntegrationTest extends AbstractPostgresIntegrationTest {
         Long secondId;
         try (var em = context.openSession()) {
             em.getTransaction().begin();
-            var a = book(0L, "A", Genre.FICTION, 1L); a.setId(null);
-            var b = book(0L, "B", Genre.FICTION, 1L); b.setId(null);
+            var a = book(null, "A", Genre.FICTION, 1L);
+            var b = book(null, "B", Genre.FICTION, 1L);
             em.persist(a);
             em.persist(b);
             firstId = a.getId();

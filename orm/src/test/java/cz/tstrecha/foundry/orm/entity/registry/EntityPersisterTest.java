@@ -75,6 +75,56 @@ class EntityPersisterTest {
     }
 
     @Test
+    void generateUpdatePreservesColumnOrderDeterministicallyAcrossInvocations() throws Exception {
+        var persister = bookPersister();
+        var book = new BookEntity();
+        book.setId(1L);
+        book.setTitle("t");
+        book.setAuthor("a");
+        book.setGenre(Genre.FICTION);
+        book.setPageCount(1L);
+
+        var mt = persister.getManagedType();
+        var dirty = List.of(
+                mt.getColumnByIndex(1),
+                mt.getColumnByIndex(2),
+                mt.getColumnByIndex(3));
+
+        var sql1 = persister.generateUpdate(1L, book, dirty).buildSql();
+        var sql2 = persister.generateUpdate(1L, book, dirty).buildSql();
+        assertThat(sql1)
+                .as("generated UPDATE must be deterministic across invocations")
+                .isEqualTo(sql2);
+    }
+
+    @Test
+    void generateUpdateProducesColumnsInListOrder() throws Exception {
+        var persister = bookPersister();
+        var book = new BookEntity();
+        book.setId(1L);
+        book.setTitle("t");
+        book.setAuthor("a");
+        book.setGenre(Genre.FICTION);
+        book.setPageCount(1L);
+
+        var mt = persister.getManagedType();
+        var titleCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(1);
+        var authorCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(2);
+        var pageCountCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(4);
+
+        var sql = persister.generateUpdate(
+                1L, book, List.of(titleCol, authorCol, pageCountCol)).buildSql();
+
+        var titleIdx = sql.indexOf(titleCol.getColumnLabel());
+        var authorIdx = sql.indexOf(authorCol.getColumnLabel());
+        var pageCountIdx = sql.indexOf(pageCountCol.getColumnLabel());
+        assertThat(titleIdx)
+                .as("column order in SET clause must follow the order of the supplied dirty-column list")
+                .isLessThan(authorIdx);
+        assertThat(authorIdx).isLessThan(pageCountIdx);
+    }
+
+    @Test
     void nullManagedTypeInConstructorIsRejected() {
         assertThatThrownBy(() -> new EntityPersister<>(null))
                 .isInstanceOf(IllegalArgumentException.class);

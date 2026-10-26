@@ -97,4 +97,22 @@ class SelectSqlTest {
         assertThatThrownBy(() -> new SelectSql(List.of("a,b")).from("t").buildSql())
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void columnLabelContainingDoubleQuoteIsRejected() {
+        assertThatThrownBy(() -> new SelectSql(List.of("a\" OR 1=1 --")).from("t").buildSql())
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tableNameContainingDoubleQuoteIsRejected() {
+        assertThatThrownBy(() -> new SelectSql(List.of("a")).from("t\" OR 1=1 --"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void tableNameStartingWithDigitIsRejected() {
+        assertThatThrownBy(() -> new SelectSql(List.of("a")).from("1table"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
