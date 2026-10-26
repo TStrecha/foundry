@@ -1,7 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.system;
 
 import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
+import cz.tstrecha.foundry.orm.definition.EmbeddedId;
 import cz.tstrecha.foundry.orm.definition.Table;
 import lombok.Data;
 
@@ -9,12 +9,8 @@ import lombok.Data;
 @Table("information_schema.columns")
 public class ColumnsEntity {
 
-    @Id
-    @Column("table_name")
-    private String tableName;
-
-    @Column("column_name")
-    private String columnName;
+    @EmbeddedId
+    private ColumnsEntityId id;
 
     @Column("data_type")
     private String dataType;

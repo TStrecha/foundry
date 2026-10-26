@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.integration;
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
+import cz.tstrecha.foundry.orm.entity.system.ColumnsEntityId;
 import cz.tstrecha.foundry.orm.fixtures.good.EntitiesMarker;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ class SystemEntitiesIntegrationTest extends AbstractPostgresIntegrationTest {
     void findAllColumnsReturnsAtLeastBookColumns() {
         try (var em = context.openSession()) {
             var columns = em.findAll(ColumnsEntity.class);
-            assertThat(columns).extracting(ColumnsEntity::getColumnName)
+            assertThat(columns).extracting(ColumnsEntity::getId).extracting(ColumnsEntityId::getColumnName)
                     .contains("id", "title");
         }
     }
