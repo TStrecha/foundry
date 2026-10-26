@@ -21,6 +21,6 @@ public class BigDecimalHandler implements TypeHandler<BigDecimal> {
 
     @Override
     public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.DOUBLE.getVendorTypeNumber());
+        statement.setNull(index, JDBCType.NUMERIC.getVendorTypeNumber());
     }
 }

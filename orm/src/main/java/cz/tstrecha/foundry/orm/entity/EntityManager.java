@@ -104,9 +104,9 @@ public class EntityManager implements Closeable {
         var entityPersister = persisterRegistry.getPersister(key.entityType());
 
         var sql = entityPersister.generateUpdate(key.key(), dirtyEntityBag.entity(), dirtyEntityBag.dirtyColumns());
-        var rowsCreated = session.update(sql);
-        if(rowsCreated != 1) {
-            throw new IllegalStateException("Database created 0 new rows.");
+        var rowsUpdated = session.update(sql);
+        if(rowsUpdated != 1) {
+            throw new IllegalStateException("Database updated 0 new rows.");
         }
     }
 

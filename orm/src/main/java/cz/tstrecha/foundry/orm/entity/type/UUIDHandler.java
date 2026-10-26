@@ -10,7 +10,12 @@ public class UUIDHandler implements TypeHandler<UUID> {
 
     @Override
     public UUID readValue(ResultSet resultSet, int index) throws SQLException {
-        return UUID.fromString(resultSet.getString(index));
+        var uuidString = resultSet.getString(index);
+        if(uuidString == null) {
+            return null;
+        }
+
+        return UUID.fromString(uuidString);
     }
 
     @Override

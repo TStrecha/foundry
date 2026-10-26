@@ -113,6 +113,7 @@ public class ManagedType<T> {
         return getIdColumn().getFieldValue(entity);
     }
 
+    //TODO: Better way
     public ManagedColumn<T, ?> getColumnByIndex(int i) {
         return new ArrayList<>(columns.values()).get(i);
     }

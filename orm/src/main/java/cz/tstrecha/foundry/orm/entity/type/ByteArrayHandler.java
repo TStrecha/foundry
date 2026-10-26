@@ -20,6 +20,6 @@ public class ByteArrayHandler implements TypeHandler<byte[]> {
 
     @Override
     public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.VARCHAR.getVendorTypeNumber());
+        statement.setNull(index, JDBCType.BINARY.getVendorTypeNumber());
     }
 }
