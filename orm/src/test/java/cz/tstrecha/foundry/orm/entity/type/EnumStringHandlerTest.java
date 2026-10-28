@@ -13,12 +13,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class EnumHandlerTest {
+class EnumStringHandlerTest {
 
     @Test
     void writeStoresEnumNameAsString() throws Exception {
         var stmt = mock(PreparedStatement.class);
-        new EnumHandler<>(Genre.class).write(stmt, 1, Genre.FICTION);
+        new EnumStringHandler<>(Genre.class).write(stmt, 1, Genre.FICTION);
         verify(stmt).setString(1, "FICTION");
     }
 
@@ -26,14 +26,14 @@ class EnumHandlerTest {
     void readParsesEnumByName() throws Exception {
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("POETRY");
-        assertThat(new EnumHandler<>(Genre.class).read(rs, 1)).isEqualTo(Genre.POETRY);
+        assertThat(new EnumStringHandler<>(Genre.class).read(rs, 1)).isEqualTo(Genre.POETRY);
     }
 
     @Test
     void readThrowsForUnknownEnumValue() throws Exception {
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("WUT");
-        assertThatThrownBy(() -> new EnumHandler<>(Genre.class).read(rs, 1))
+        assertThatThrownBy(() -> new EnumStringHandler<>(Genre.class).read(rs, 1))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -41,13 +41,13 @@ class EnumHandlerTest {
     void readMapsSqlNullToJavaNull() throws Exception {
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn(null);
-        assertThat(new EnumHandler<>(Genre.class).read(rs, 1)).isNull();
+        assertThat(new EnumStringHandler<>(Genre.class).read(rs, 1)).isNull();
     }
 
     @Test
     void writeMapsJavaNullToSqlNull() throws Exception {
         var stmt = mock(PreparedStatement.class);
-        new EnumHandler<>(Genre.class).write(stmt, 1, null);
+        new EnumStringHandler<>(Genre.class).write(stmt, 1, null);
         verify(stmt).setNull(1, Types.VARCHAR);
     }
 
@@ -55,13 +55,13 @@ class EnumHandlerTest {
     void readIsCaseSensitive() throws Exception {
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("fiction");
-        assertThatThrownBy(() -> new EnumHandler<>(Genre.class).read(rs, 1))
+        assertThatThrownBy(() -> new EnumStringHandler<>(Genre.class).read(rs, 1))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void nullEnumClassIsRejected() {
-        assertThatThrownBy(() -> new EnumHandler<>(null))
+        assertThatThrownBy(() -> new EnumStringHandler<>(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

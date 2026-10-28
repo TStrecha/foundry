@@ -11,9 +11,10 @@ import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
 @RequiredArgsConstructor
 public class EntityManager implements Closeable {
@@ -23,12 +24,8 @@ public class EntityManager implements Closeable {
     private final PersistenceContext persistenceContext;
 
     public EntityManager(ConnectionProvider connectionProvider, PersisterRegistry persisterRegistry) {
-        if(connectionProvider == null) {
-            throw new IllegalArgumentException("connectionProvider is null");
-        }
-        if(persisterRegistry == null) {
-            throw new IllegalArgumentException("persisterRegistry is null");
-        }
+        requireNotNullArgument(connectionProvider, "connectionProvider");
+        requireNotNullArgument(persisterRegistry, "persisterRegistry");
 
         this.session = new DBSession(connectionProvider);
         this.persisterRegistry = persisterRegistry;
@@ -36,9 +33,7 @@ public class EntityManager implements Closeable {
     }
 
     public <T, ID> Optional<T> find(Class<T> entityType, ID id) {
-        if(entityType == null) {
-            throw new IllegalArgumentException("entityType is null");
-        }
+        requireNotNullArgument(entityType, "entityType");
         if(!persisterRegistry.persisterExists(entityType)) {
             throw new IllegalArgumentException("No persister found for type " + entityType.getName());
         }
@@ -58,9 +53,7 @@ public class EntityManager implements Closeable {
     }
 
     public <T> List<T> findAll(Class<T> entityType) {
-        if(entityType == null) {
-            throw new IllegalArgumentException("entityType is null");
-        }
+        requireNotNullArgument(entityType, "entityType");
         if(!persisterRegistry.persisterExists(entityType)) {
             throw new IllegalArgumentException("No persister found for type " + entityType.getName());
         }
@@ -75,9 +68,7 @@ public class EntityManager implements Closeable {
     }
 
     public <T> void persist(T entity) {
-        if(entity == null) {
-            throw new IllegalArgumentException("entity is null");
-        }
+        requireNotNullArgument(entity, "entity");
 
         var entityType = entity.getClass();
         if(!persisterRegistry.persisterExists(entityType)) {

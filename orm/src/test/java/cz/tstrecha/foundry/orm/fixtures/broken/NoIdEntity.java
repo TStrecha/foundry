@@ -1,7 +1,7 @@
 package cz.tstrecha.foundry.orm.fixtures.broken;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@Table("no_id")
+@Entity(name = "no_id")
 public class NoIdEntity {
 
-    @Column("name")
+    @Column(name = "name")
     private String name;
 }

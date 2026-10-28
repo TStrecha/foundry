@@ -1,23 +1,23 @@
 package cz.tstrecha.foundry.orm.fixtures.good;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@Table("person")
+@Entity(name = "person")
 public class PersonEntity {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 
-    @Column("first_name")
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column("last_name")
+    @Column(name = "last_name")
     private String lastName;
 }

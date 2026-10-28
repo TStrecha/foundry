@@ -1,12 +1,12 @@
 package cz.tstrecha.foundry.orm.fixtures.broken;
 
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Entity;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@Table("no_columns")
+@Entity(name = "no_columns")
 public class NoColumnsEntity {
 
     private String randomField;

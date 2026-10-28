@@ -1,5 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
+import jakarta.persistence.EnumType;
+
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -12,13 +14,13 @@ public class TypeHandlerResolver {
 
     private static final Map<Type, TypeHandler<?>> handlerLookupMap = new HashMap<>();
 
-    public static TypeHandler<?> findHandlerForType(Class<?> type) {
+    public static TypeHandler<?> findHandlerForType(Class<?> type, EnumType enumType) {
         requireNotNullArgument(type, "type");
 
-        return handlerLookupMap.computeIfAbsent(type, TypeHandlerResolver::resolveForType);
+        return handlerLookupMap.computeIfAbsent(type, _ -> TypeHandlerResolver.resolveForType(type, enumType));
     }
 
-    private static TypeHandler<?> resolveForType(Type fieldType) {
+    private static TypeHandler<?> resolveForType(Type fieldType, EnumType enumType) {
 
         if(fieldType instanceof Class<?> clazz) {
             if(clazz == String.class) {
@@ -46,7 +48,11 @@ public class TypeHandlerResolver {
                 return new BigDecimalHandler();
             }
             if(clazz.isEnum()) {
-                return new EnumHandler<>((Class<Enum>) clazz);
+                requireNotNullArgument(enumType, "enumType");
+                return switch (enumType) {
+                    case STRING -> new EnumStringHandler<>((Class<Enum>) clazz);
+                    case ORDINAL -> new EnumOrdinalHandler<>((Class<Enum>) clazz);
+                };
             }
         }
 

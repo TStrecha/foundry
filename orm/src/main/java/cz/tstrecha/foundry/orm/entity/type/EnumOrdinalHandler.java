@@ -7,33 +7,32 @@ import java.sql.SQLException;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
-public class EnumHandler<T extends Enum<T>> implements TypeHandler<Enum<T>> {
+public class EnumOrdinalHandler<T extends Enum<T>> implements TypeHandler<Enum<T>> {
 
     private final Class<T> type;
 
-    public EnumHandler(Class<T> type) {
+    public EnumOrdinalHandler(Class<T> type) {
         requireNotNullArgument(type, "type");
-
         this.type = type;
     }
 
     @Override
     public Enum<T> readValue(ResultSet resultSet, int index) throws SQLException {
-        var value = resultSet.getString(index);
-        if(value == null) {
+        var value = resultSet.getInt(index);
+        if(resultSet.wasNull()) {
             return null;
         }
 
-        return Enum.valueOf(type, value);
+        return type.getEnumConstants()[value];
     }
 
     @Override
     public void writeValue(PreparedStatement statement, int index, Enum<T> value) throws SQLException {
-        statement.setString(index, value.name());
+        statement.setInt(index, value.ordinal());
     }
 
     @Override
     public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.VARCHAR.getVendorTypeNumber());
+        statement.setNull(index, JDBCType.INTEGER.getVendorTypeNumber());
     }
 }

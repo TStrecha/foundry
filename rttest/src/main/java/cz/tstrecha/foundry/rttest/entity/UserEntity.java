@@ -1,27 +1,30 @@
 package cz.tstrecha.foundry.rttest.entity;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
-@Table("app_user")
+@Entity(name = "app_user")
 public class UserEntity {
 
+    private static final String SEQUENCE_NAME = "user_seq";
+
     @Id
-    @Column("id")
+    @Column(name = "id")
+    @SequenceGenerator(name = SEQUENCE_NAME, sequenceName = SEQUENCE_NAME, allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = SEQUENCE_NAME)
     private Long id;
 
-    @Column("company_name")
+    @Column(name = "company_name")
     private String companyName;
 
-    @Column("first_name")
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column("last_name")
+    @Column(name = "last_name")
     private String lastName;
 
-    @Column("account_type")
+    @Column(name = "account_type")
+    @Enumerated(EnumType.STRING)
     private AccountType accountType;
 }

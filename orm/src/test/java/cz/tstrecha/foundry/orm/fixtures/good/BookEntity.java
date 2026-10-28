@@ -1,30 +1,33 @@
 package cz.tstrecha.foundry.orm.fixtures.good;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@Table("book")
+@Entity(name = "book")
 public class BookEntity {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 
-    @Column("title")
+    @Column(name = "title")
     private String title;
 
-    @Column("author")
+    @Column(name = "author")
     private String author;
 
-    @Column("genre")
+    @Column(name = "genre")
+    @Enumerated(EnumType.STRING)
     private Genre genre;
 
-    @Column("page_count")
+    @Column(name = "page_count")
     private Long pageCount;
 }

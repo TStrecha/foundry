@@ -1,7 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
-import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
+import jakarta.persistence.Entity;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
@@ -32,7 +32,7 @@ public class PersisterRegistry {
                 .filterInputsBy(filterBuilder);
         var reflections = new Reflections(reflectionsConfig);
 
-        var entities = reflections.getTypesAnnotatedWith(Table.class);
+        var entities = reflections.getTypesAnnotatedWith(Entity.class);
         for (var entity : entities) {
             var managedType = new ManagedType<>(entity);
             var persister = new EntityPersister<>(managedType);

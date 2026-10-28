@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.type;
 
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import jakarta.persistence.EnumType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -16,90 +17,97 @@ class TypeHandlerResolverTest {
 
     @Test
     void returnsStringHandlerForString() {
-        assertThat(TypeHandlerResolver.findHandlerForType(String.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(String.class, null))
                 .isInstanceOf(StringHandler.class);
     }
 
     @Test
     void returnsLongHandlerForLong() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Long.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(Long.class, null))
                 .isInstanceOf(LongHandler.class);
     }
 
     @Test
-    void returnsEnumHandlerForEnumType() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Genre.class))
-                .isInstanceOf(EnumHandler.class);
+    void returnsStringEnumHandlerForEnumWithStringType() {
+        assertThat(TypeHandlerResolver.findHandlerForType(Genre.class, EnumType.STRING))
+                .isInstanceOf(EnumStringHandler.class);
     }
 
     @Test
     void sameEnumTypeReturnsCachedInstance() {
-        var a = TypeHandlerResolver.findHandlerForType(Genre.class);
-        var b = TypeHandlerResolver.findHandlerForType(Genre.class);
+        var a = TypeHandlerResolver.findHandlerForType(Genre.class, EnumType.STRING);
+        var b = TypeHandlerResolver.findHandlerForType(Genre.class, EnumType.STRING);
         assertThat(a).isSameAs(b);
     }
 
     @Test
+    void nullEnumTypeIsRejectedForEnumClass() {
+        enum StandaloneEnum { A }
+        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(StandaloneEnum.class, null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void unsupportedTypeThrows() {
-        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(FoundryConfiguration.class))
+        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(FoundryConfiguration.class, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void primitiveLongIsResolvedToLongHandler() {
-        assertThat(TypeHandlerResolver.findHandlerForType(long.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(long.class, null))
                 .isInstanceOf(LongHandler.class);
     }
 
     @Test
     void integerIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Integer.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(Integer.class, null))
                 .isInstanceOf(IntegerHandler.class);
     }
 
     @Test
     void booleanIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Boolean.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(Boolean.class, null))
                 .isInstanceOf(BooleanHandler.class);
     }
 
     @Test
     void doubleIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Double.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(Double.class, null))
                 .isInstanceOf(DoubleHandler.class);
     }
 
     @Test
     void bigDecimalIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(BigDecimal.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(BigDecimal.class, null))
                 .isInstanceOf(BigDecimalHandler.class);
     }
 
     @Test
     void uuidIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(UUID.class))
+        assertThat(TypeHandlerResolver.findHandlerForType(UUID.class, null))
                 .isInstanceOf(UUIDHandler.class);
     }
 
     @Test
     void instantIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Instant.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Instant.class, null)).isNotNull();
     }
 
     @Test
     void localDateIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(LocalDate.class)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(LocalDate.class, null)).isNotNull();
     }
 
     @Test
     void byteArrayIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(byte[].class))
+        assertThat(TypeHandlerResolver.findHandlerForType(byte[].class, null))
                 .isInstanceOf(ByteArrayHandler.class);
     }
 
     @Test
     void nullTypeIsRejected() {
-        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(null))
+        assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

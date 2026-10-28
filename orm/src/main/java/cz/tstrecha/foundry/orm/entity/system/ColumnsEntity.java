@@ -1,30 +1,30 @@
 package cz.tstrecha.foundry.orm.entity.system;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 
 @Data
-@Table("information_schema.columns")
+@Entity(name = "information_schema.columns")
 public class ColumnsEntity {
 
     @Id
-    @Column("table_name")
+    @Column(name = "table_name")
     private String tableName;
 
-    @Column("column_name")
+    @Column(name = "column_name")
     private String columnName;
 
-    @Column("data_type")
+    @Column(name = "data_type")
     private String dataType;
 
-    @Column("character_maximum_length")
+    @Column(name = "character_maximum_length")
     private String characterMaximumLength;
 
-    @Column("is_nullable")
+    @Column(name = "is_nullable")
     private String isNullable;
 
-    @Column("column_default")
+    @Column(name = "column_default")
     private String columnDefault;
 }

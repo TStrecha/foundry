@@ -1,14 +1,14 @@
 package cz.tstrecha.foundry.orm.fixtures.broken;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
-@Table("no_ctor")
+@Entity(name = "no_ctor")
 public class NoDefaultConstructorEntity {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 
     public NoDefaultConstructorEntity(Long id) {

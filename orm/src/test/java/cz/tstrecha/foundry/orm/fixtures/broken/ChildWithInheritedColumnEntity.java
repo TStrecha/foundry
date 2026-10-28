@@ -1,8 +1,8 @@
 package cz.tstrecha.foundry.orm.fixtures.broken;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
-@Table("child_entity")
+@Entity(name = "child_entity")
 public class ChildWithInheritedColumnEntity extends ParentWithColumn {
 
-    @Column("name")
+    @Column(name = "name")
     private String name;
 }
 
@@ -27,6 +27,6 @@ public class ChildWithInheritedColumnEntity extends ParentWithColumn {
 abstract class ParentWithColumn {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 }

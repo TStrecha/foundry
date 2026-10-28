@@ -1,11 +1,11 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
 import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
 import cz.tstrecha.foundry.orm.entity.row.RowMapper;
 import cz.tstrecha.foundry.orm.util.ReflectionUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Getter;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,8 +32,8 @@ public class ManagedType<T> {
 
         this.type = type;
         this.entityCreator = new ManagedTypeCreator<>(type);
-        this.tableName = Optional.ofNullable(type.getAnnotation(Table.class))
-                .map(Table::value)
+        this.tableName = Optional.ofNullable(type.getAnnotation(Entity.class))
+                .map(Entity::name)
                 .orElseThrow(() -> new IllegalArgumentException("Class " + type.getName() + " cannot be managed, as it is not annotated with @Table"));
 
         this.columns = new LinkedHashMap<>();
@@ -45,8 +45,8 @@ public class ManagedType<T> {
                 continue;
             }
 
-            var managedColumn = new ManagedColumn<T, Object>(columnDefinition.value(), field);
-            columns.put(columnDefinition.value(), managedColumn);
+            var managedColumn = new ManagedColumn<T, Object>(columnDefinition.name(), field);
+            columns.put(columnDefinition.name(), managedColumn);
 
             if(field.getAnnotation(Id.class) != null) {
                 if(idColumn != null) {

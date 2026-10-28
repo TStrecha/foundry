@@ -3,12 +3,15 @@ package cz.tstrecha.foundry.orm.entity.registry;
 import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.ToString;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
@@ -31,8 +34,14 @@ public class ManagedColumn<E, F> {
         this.field = field;
         this.field.setAccessible(true);
 
+        EnumType enumType = EnumType.ORDINAL;
+
+        if(field.getType().isEnum()) {
+            enumType = Optional.ofNullable(field.getAnnotation(Enumerated.class)).map(Enumerated::value).orElse(enumType);
+        }
+
         this.fieldType = (Class<F>) field.getType();
-        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(field.getType());
+        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(field.getType(), enumType);
     }
 
     public ParameterBinder binderForEntity(E entity) {

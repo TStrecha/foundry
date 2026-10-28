@@ -1,35 +1,34 @@
 package cz.tstrecha.foundry.rttest.entity;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@Table("money_transaction")
+@Entity(name = "money_transaction")
 public class MoneyTransactionEntity {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 
-    @Column("type")
+    @Column(name = "type")
+    @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    @Column("identifier")
+    @Column(name = "identifier")
     private String identifier;
 
-    @Column("amount")
+    @Column(name = "amount")
     private Long amount;
 
-    @Column("category_id")
+    @Column(name = "category_id")
     private Long categoryId;
 
-    @Column("payer")
+    @Column(name = "payer")
     private String payer;
 
-    @Column("note")
+    @Column(name = "note")
     private String note;
 }

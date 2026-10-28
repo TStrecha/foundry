@@ -1,8 +1,8 @@
 package cz.tstrecha.foundry.orm.fixtures.good;
 
-import cz.tstrecha.foundry.orm.definition.Column;
-import cz.tstrecha.foundry.orm.definition.Id;
-import cz.tstrecha.foundry.orm.definition.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,28 +11,28 @@ import java.util.UUID;
 
 @Data
 @NoArgsConstructor
-@Table("types_entity")
+@Entity(name = "types_entity")
 public class TypesEntity {
 
     @Id
-    @Column("id")
+    @Column(name = "id")
     private Long id;
 
-    @Column("uuid_col")
+    @Column(name = "uuid_col")
     private UUID uuidCol;
 
-    @Column("decimal_col")
+    @Column(name = "decimal_col")
     private BigDecimal decimalCol;
 
-    @Column("integer_col")
+    @Column(name = "integer_col")
     private Integer integerCol;
 
-    @Column("double_col")
+    @Column(name = "double_col")
     private Double doubleCol;
 
-    @Column("boolean_col")
+    @Column(name = "boolean_col")
     private Boolean booleanCol;
 
-    @Column("bytes_col")
+    @Column(name = "bytes_col")
     private byte[] bytesCol;
 }
