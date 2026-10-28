@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
+import cz.tstrecha.foundry.orm.operation.sql.Sql;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

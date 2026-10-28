@@ -1,6 +1,6 @@
-package cz.tstrecha.foundry.orm.entity.registry;
+package cz.tstrecha.foundry.orm.entity.persister;
 
-import cz.tstrecha.foundry.orm.connection.sql.ParameterBinder;
+import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
 import jakarta.persistence.EnumType;

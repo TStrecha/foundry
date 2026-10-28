@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.connection.result;
 
+import cz.tstrecha.foundry.orm.operation.result.UpdateOperationResult;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Statement;

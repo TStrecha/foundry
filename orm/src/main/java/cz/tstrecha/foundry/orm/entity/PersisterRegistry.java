@@ -1,5 +1,7 @@
-package cz.tstrecha.foundry.orm.entity.registry;
+package cz.tstrecha.foundry.orm.entity;
 
+import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
+import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
 import jakarta.persistence.Entity;
 import org.reflections.Reflections;

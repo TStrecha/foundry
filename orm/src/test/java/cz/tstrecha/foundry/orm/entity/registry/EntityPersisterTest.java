@@ -1,5 +1,8 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
+import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
+import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.context;
 
-import cz.tstrecha.foundry.orm.entity.registry.EntityPersister;
+import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
 
 import java.util.HashMap;
 import java.util.List;

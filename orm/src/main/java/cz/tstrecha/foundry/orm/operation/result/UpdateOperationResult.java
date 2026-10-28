@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.connection.result;
+package cz.tstrecha.foundry.orm.operation.result;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

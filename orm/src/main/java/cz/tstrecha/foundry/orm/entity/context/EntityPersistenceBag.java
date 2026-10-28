@@ -1,7 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.context;
 
-import cz.tstrecha.foundry.orm.entity.registry.ManagedColumn;
-import cz.tstrecha.foundry.orm.entity.registry.ManagedType;
+import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
+import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import lombok.Getter;
 
 import javax.annotation.Nullable;

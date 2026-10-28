@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;

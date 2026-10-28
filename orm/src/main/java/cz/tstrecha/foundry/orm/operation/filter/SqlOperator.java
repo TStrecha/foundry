@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation.filter;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

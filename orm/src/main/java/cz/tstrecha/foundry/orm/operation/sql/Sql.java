@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation.sql;
 
 import java.util.Arrays;
 import java.util.Collection;

@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.entity.PersisterRegistry;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.EntitiesMarker;

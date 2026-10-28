@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.broken.ChildWithInheritedColumnEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.IdWithoutColumnEntity;

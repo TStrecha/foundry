@@ -1,4 +1,4 @@
-package cz.tstrecha.foundry.orm.entity.registry;
+package cz.tstrecha.foundry.orm.entity.persister;
 
 import lombok.Getter;
 

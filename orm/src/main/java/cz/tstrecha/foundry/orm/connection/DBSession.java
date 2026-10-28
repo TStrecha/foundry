@@ -1,9 +1,9 @@
 package cz.tstrecha.foundry.orm.connection;
 
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
-import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
-import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
-import cz.tstrecha.foundry.orm.connection.sql.UpdateSql;
+import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
+import cz.tstrecha.foundry.orm.operation.sql.SelectSql;
+import cz.tstrecha.foundry.orm.operation.sql.UpdateSql;
 import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;

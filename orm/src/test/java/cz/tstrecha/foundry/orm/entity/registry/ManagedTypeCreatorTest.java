@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.entity.persister.ManagedTypeCreator;
 import cz.tstrecha.foundry.orm.fixtures.broken.AbstractEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoDefaultConstructorEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.PrivateConstructorEntity;

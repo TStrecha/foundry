@@ -1,5 +1,9 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
+import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
+import cz.tstrecha.foundry.orm.operation.ParameterBinder;
+import cz.tstrecha.foundry.orm.operation.filter.SqlOperator;
+import cz.tstrecha.foundry.orm.operation.sql.UpdateSql;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 

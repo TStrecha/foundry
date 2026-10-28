@@ -4,7 +4,7 @@ import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProviderFactory;
 import cz.tstrecha.foundry.orm.entity.EntityManager;
 import cz.tstrecha.foundry.orm.entity.EntityManagerFactory;
-import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
+import cz.tstrecha.foundry.orm.entity.PersisterRegistry;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.postgresql.ds.PGSimpleDataSource;

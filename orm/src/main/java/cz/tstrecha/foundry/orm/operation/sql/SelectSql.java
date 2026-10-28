@@ -1,6 +1,7 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation.sql;
 
-import cz.tstrecha.foundry.orm.connection.result.SelectOperationResult;
+import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
+import cz.tstrecha.foundry.orm.operation.result.SelectOperationResult;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 

@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
-import cz.tstrecha.foundry.orm.connection.result.DatabaseOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.DatabaseOperationResult;
+import cz.tstrecha.foundry.orm.operation.sql.ExecutableQuery;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 

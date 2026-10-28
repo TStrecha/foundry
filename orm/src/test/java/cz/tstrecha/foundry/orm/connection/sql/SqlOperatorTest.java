@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
+import cz.tstrecha.foundry.orm.operation.filter.SqlOperator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

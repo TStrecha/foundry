@@ -1,5 +1,6 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation.filter;
 
+import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import lombok.Getter;
 
 import java.util.ArrayList;

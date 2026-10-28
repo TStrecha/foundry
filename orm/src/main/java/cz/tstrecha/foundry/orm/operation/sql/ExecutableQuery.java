@@ -1,6 +1,6 @@
-package cz.tstrecha.foundry.orm.connection.sql;
+package cz.tstrecha.foundry.orm.operation.sql;
 
-import cz.tstrecha.foundry.orm.connection.result.DatabaseOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.DatabaseOperationResult;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

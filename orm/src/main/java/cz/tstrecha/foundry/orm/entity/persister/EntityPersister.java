@@ -1,10 +1,10 @@
-package cz.tstrecha.foundry.orm.entity.registry;
+package cz.tstrecha.foundry.orm.entity.persister;
 
-import cz.tstrecha.foundry.orm.connection.sql.FilterBuilder;
-import cz.tstrecha.foundry.orm.connection.sql.InsertSql;
-import cz.tstrecha.foundry.orm.connection.sql.SelectSql;
-import cz.tstrecha.foundry.orm.connection.sql.SqlOperator;
-import cz.tstrecha.foundry.orm.connection.sql.UpdateSql;
+import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
+import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
+import cz.tstrecha.foundry.orm.operation.sql.SelectSql;
+import cz.tstrecha.foundry.orm.operation.filter.SqlOperator;
+import cz.tstrecha.foundry.orm.operation.sql.UpdateSql;
 import cz.tstrecha.foundry.orm.entity.context.EntityKey;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
@@ -14,9 +14,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static cz.tstrecha.foundry.orm.connection.sql.Sql.insert;
-import static cz.tstrecha.foundry.orm.connection.sql.Sql.select;
-import static cz.tstrecha.foundry.orm.connection.sql.Sql.update;
+import static cz.tstrecha.foundry.orm.operation.sql.Sql.insert;
+import static cz.tstrecha.foundry.orm.operation.sql.Sql.select;
+import static cz.tstrecha.foundry.orm.operation.sql.Sql.update;
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
 

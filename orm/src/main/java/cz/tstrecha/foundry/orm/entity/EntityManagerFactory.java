@@ -1,7 +1,6 @@
 package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProviderFactory;
-import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

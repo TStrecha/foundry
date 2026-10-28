@@ -6,8 +6,7 @@ import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.context.DirtyEntityBag;
 import cz.tstrecha.foundry.orm.entity.context.EntityPersistenceBag;
 import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
-import cz.tstrecha.foundry.orm.entity.registry.EntityPersister;
-import cz.tstrecha.foundry.orm.entity.registry.PersisterRegistry;
+import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;

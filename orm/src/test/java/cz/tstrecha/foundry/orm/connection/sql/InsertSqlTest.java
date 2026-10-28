@@ -1,5 +1,7 @@
 package cz.tstrecha.foundry.orm.connection.sql;
 
+import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
+import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
