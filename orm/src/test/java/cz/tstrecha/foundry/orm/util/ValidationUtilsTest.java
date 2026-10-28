@@ -176,7 +176,7 @@ class ValidationUtilsTest {
 
     @Test
     void requireValidSqlIdentifier_acceptsSchemaQualifiedTableName() {
-        assertThatCode(() -> requireValidSqlIdentifier("information_schema.columns", "table"))
+        assertThatCode(() -> requireValidSqlIdentifier("information_schema.fields", "table"))
                 .doesNotThrowAnyException();
     }
 

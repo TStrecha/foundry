@@ -22,7 +22,7 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
         requireNotEmptyArgument(table, "table");
         requireValidSqlIdentifier(table, "table");
 
-        requireNotNullArgument(columns, "columns");
+        requireNotNullArgument(columns, "fields");
         columns.forEach(column -> requireValidSqlIdentifier(column, "column"));
 
         this.table = table;
@@ -43,7 +43,7 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
     @Override
     public String buildSql() {
         requireNotEmptyState(table, "table");
-        requireNotEmptyState(columns, "columns");
+        requireNotEmptyState(columns, "fields");
         requireNotEmptyState(valueBinders, "valueBinders");
         if(columns.size() != valueBinders.size()) {
             throw new IllegalStateException("Columns and value sizes are not equal");

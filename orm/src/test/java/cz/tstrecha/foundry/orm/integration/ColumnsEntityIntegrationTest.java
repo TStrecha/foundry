@@ -12,7 +12,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Verifies the type mapping of the system entity. Several of its columns in
+ * Verifies the type mapping of the system entity. Several of its fields in
  * information_schema are numeric (e.g. {@code character_maximum_length}) but
  * the entity declares them as {@code String}. This can lead to silent data
  * loss when the DB value exists.

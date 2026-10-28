@@ -1,10 +1,7 @@
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
-import cz.tstrecha.foundry.rttest.entity.AccountType;
-import cz.tstrecha.foundry.rttest.entity.Entities;
-import cz.tstrecha.foundry.rttest.entity.MoneyTransactionEntity;
-import cz.tstrecha.foundry.rttest.entity.UserEntity;
+import cz.tstrecha.foundry.rttest.entity.*;
 import lombok.SneakyThrows;
 
 private final String URL = "jdbc:postgresql://localhost:5432/portify";
@@ -33,8 +30,7 @@ void main() {
             newUser.setId(new Random().nextLong());
             newUser.setAccountType(AccountType.PERSON);
             newUser.setCompanyName("TestCompany123");
-            newUser.setFirstName("Thomas");
-            newUser.setLastName("Tester");
+            newUser.setName(new UserName(new Titles("a", "b"), "Thomas", "Tester"));
 
             entityManager.persist(newUser);
 
@@ -42,7 +38,7 @@ void main() {
             System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());
 
             appUser.setCompanyName("testing");
-            appUser.setLastName("1");
+            appUser.setName(new UserName(null, "1", null));
 
             var appUser2 = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser2.getId() + ": " + appUser2.getAccountType() + " - " + appUser2.getCompanyName());

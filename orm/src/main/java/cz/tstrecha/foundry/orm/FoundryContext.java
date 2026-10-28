@@ -5,6 +5,7 @@ import cz.tstrecha.foundry.orm.connection.provider.ConnectionProviderFactory;
 import cz.tstrecha.foundry.orm.entity.EntityManager;
 import cz.tstrecha.foundry.orm.entity.EntityManagerFactory;
 import cz.tstrecha.foundry.orm.entity.PersisterRegistry;
+import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -17,12 +18,14 @@ public class FoundryContext {
     private final ConnectionProviderFactory connectionProviderFactory;
     private final EntityManagerFactory entityManagerFactory;
     private final PersisterRegistry persisterRegistry;
+    private final DescriptorRegistry descriptorRegistry;
 
     @SneakyThrows
     public FoundryContext(FoundryConfiguration foundryConfiguration) {
         requireNotNullArgument(foundryConfiguration, "foundryConfiguration");
 
         this.persisterRegistry = new PersisterRegistry(foundryConfiguration.scanningRoots());
+        this.descriptorRegistry = new DescriptorRegistry(foundryConfiguration.scanningRoots());
 
         var dataSource = new PGSimpleDataSource();
         dataSource.setURL(foundryConfiguration.url());

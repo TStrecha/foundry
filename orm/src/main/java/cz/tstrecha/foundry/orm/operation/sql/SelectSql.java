@@ -19,7 +19,7 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
     private FilterBuilder filterBuilder;
 
     public SelectSql(Collection<String> columns) {
-        requireNotEmptyArgument(columns, "columns");
+        requireNotEmptyArgument(columns, "fields");
         columns.forEach(column -> requireValidSqlIdentifier(column, "column"));
 
         this.columns = columns;
@@ -41,7 +41,7 @@ public class SelectSql implements ExecutableQuery<SelectOperationResult> {
     @Override
     public String buildSql() {
         requireNotEmptyState(table, "table");
-        requireNotEmptyState(columns, "columns");
+        requireNotEmptyState(columns, "fields");
         if(StringUtils.isBlank(table)) {
             throw new IllegalArgumentException("Table name cannot be empty");
         }

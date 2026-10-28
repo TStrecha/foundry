@@ -36,7 +36,7 @@ class BigDecimalHandlerTest {
         var stmt = mock(PreparedStatement.class);
         new BigDecimalHandler().writeNull(stmt, 1);
         // BigDecimal maps to SQL NUMERIC/DECIMAL. DOUBLE is a different type family
-        // (floating-point) and can be refused by strict drivers on NUMERIC columns.
+        // (floating-point) and can be refused by strict drivers on NUMERIC fields.
         verify(stmt).setNull(eq(1), intThat(code ->
                 code == JDBCType.NUMERIC.getVendorTypeNumber()
              || code == JDBCType.DECIMAL.getVendorTypeNumber()));

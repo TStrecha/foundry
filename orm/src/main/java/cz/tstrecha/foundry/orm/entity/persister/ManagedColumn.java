@@ -16,14 +16,13 @@ import java.util.Optional;
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
 
+@Getter
 @ToString
 public class ManagedColumn<E, F> {
 
-    @Getter
     private final String columnLabel;
     private final Field field;
     private final TypeHandler<F> typeHandler;
-    @Getter
     private final Class<F> fieldType;
 
     public ManagedColumn(String columnLabel, Field field) {

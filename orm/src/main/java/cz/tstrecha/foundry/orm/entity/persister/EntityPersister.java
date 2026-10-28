@@ -60,7 +60,7 @@ public class EntityPersister<T> {
     public UpdateSql generateUpdate(Object id, Object entity, List<ManagedColumn<T, ?>> columns) {
         requireNotNullArgument(id, "id");
         requireNotNullArgument(entity, "entity");
-        requireNotEmptyArgument(columns, "columns");
+        requireNotEmptyArgument(columns, "fields");
 
         var typedEntity = type.cast(entity);
         var valueSetters = columns.stream()
