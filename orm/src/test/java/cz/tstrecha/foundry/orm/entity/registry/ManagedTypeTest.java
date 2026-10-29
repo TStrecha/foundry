@@ -9,6 +9,11 @@ import cz.tstrecha.foundry.orm.fixtures.broken.MultipleIdsEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoIdEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.NoTableEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.UnsupportedTypeEntity;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
+import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.PersonEntity;
 import org.junit.jupiter.api.Test;
@@ -161,6 +166,188 @@ class ManagedTypeTest {
     @Test
     void nullTypeIsRejected() {
         assertThatThrownBy(() -> new ManagedType<>(null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void scalarIdEntityExposesOneIdColumn() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+
+        assertThat(mt.getIdColumns())
+                .as("a scalar @Id entity has exactly one id column")
+                .hasSize(1);
+        assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
+    }
+
+    @Test
+    void embeddedEntityExposesAllFlattenedLeafColumnLabels() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+
+        assertThat(mt.getManagedColumnLabels())
+                .as("every leaf @Column reachable through @Embedded appears as its own managed column")
+                .containsExactlyInAnyOrder("id", "company_name", "first_name", "last_name", "title_before", "title_after");
+    }
+
+    @Test
+    void embeddedIdEntityExposesOneIdColumnPerKeyPart() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+
+        assertThat(mt.getIdColumns())
+                .as("an @EmbeddedId with N @Column fields yields N id columns")
+                .extracting(c -> c.getColumnLabel())
+                .containsExactlyInAnyOrder("part_a", "part_b");
+    }
+
+    @Test
+    void extractKeyFromEntityReturnsEmbeddedKeyInstanceForEmbeddedId() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var entity = new CompositeKeyFixtureEntity();
+        var key = new CompositeKeyFixture("A", "B");
+        entity.setPk(key);
+        entity.setPayload("x");
+
+        assertThat(mt.extractKeyFromEntity(entity))
+                .as("for @EmbeddedId the key is the embeddable instance itself — the ORM uses it to bind each key column")
+                .isEqualTo(key);
+    }
+
+    @Test
+    void rowMapperPopulatesEmbeddedColumnsIntoNestedInstance() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var rs = mock(ResultSet.class);
+        when(rs.getLong(1)).thenReturn(7L);
+        when(rs.getString(2)).thenReturn("Acme");
+        when(rs.getString(3)).thenReturn("Alice");
+
+        var mapper = mt.createRowMapper(List.of("id", "company_name", "first_name"));
+        var mapped = mapper.map(rs);
+
+        assertThat(mapped.getId()).isEqualTo(7L);
+        assertThat(mapped.getCompanyName()).isEqualTo("Acme");
+        assertThat(mapped.getName())
+                .as("materialising a nested column must create the missing embeddable")
+                .isNotNull();
+        assertThat(mapped.getName().getFirstName()).isEqualTo("Alice");
+    }
+
+    @Test
+    void rowMapperPopulatesDeeplyNestedColumnsIntoDoublyEmbeddedInstance() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var rs = mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("Dr.");
+
+        var mapper = mt.createRowMapper(List.of("title_before"));
+        var mapped = mapper.map(rs);
+
+        assertThat(mapped.getName()).isNotNull();
+        assertThat(mapped.getName().getTitles()).isNotNull();
+        assertThat(mapped.getName().getTitles().getTitleBefore()).isEqualTo("Dr.");
+    }
+
+    @Test
+    void valueBindersForEmbeddedEntityReadThroughNestedPath() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var user = new UserFixtureEntity(1L, "Acme", new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+
+        var stmt = mock(PreparedStatement.class);
+        var columnOrder = mt.getManagedColumnLabels().stream().toList();
+        var binders = mt.getValueBindersForEntity(user);
+        for (int i = 0; i < binders.size(); i++) {
+            binders.get(i).bind(stmt, i + 1);
+        }
+
+        verify(stmt).setLong(eq(columnOrder.indexOf("id") + 1), eq(1L));
+        verify(stmt).setString(eq(columnOrder.indexOf("company_name") + 1), eq("Acme"));
+        verify(stmt).setString(eq(columnOrder.indexOf("first_name") + 1), eq("Alice"));
+        verify(stmt).setString(eq(columnOrder.indexOf("last_name") + 1), eq("Smith"));
+        verify(stmt).setString(eq(columnOrder.indexOf("title_before") + 1), eq("Dr."));
+        verify(stmt).setString(eq(columnOrder.indexOf("title_after") + 1), eq("PhD"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void createEntitySnapshotIncludesEmbeddedColumnValues() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var user = new UserFixtureEntity(1L, "Acme", new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+
+        List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
+
+        assertThat(snapshot)
+                .as("snapshot carries one value per leaf column, including nested ones")
+                .containsExactlyInAnyOrder(1L, "Acme", "Alice", "Smith", "Dr.", "PhD");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void snapshotForEntityWithMissingEmbeddedHasNullsForNestedColumns() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var user = new UserFixtureEntity(1L, "Acme", null);
+
+        List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
+
+        assertThat(snapshot)
+                .as("missing embeddable yields nulls for its nested columns rather than failing")
+                .contains(1L, "Acme", null, null, null, null);
+    }
+
+    @Test
+    void rowMapperForEmbeddedIdEntityAutoInstantiatesEmbeddedKey() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var rs = mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("A");
+        when(rs.getString(2)).thenReturn("B");
+
+        var mapper = mt.createRowMapper(List.of("part_a", "part_b"));
+        var mapped = mapper.map(rs);
+
+        assertThat(mapped.getPk())
+                .as("loading an entity with @EmbeddedId must auto-instantiate the embedded key, otherwise key columns are silently lost")
+                .isNotNull();
+        assertThat(mapped.getPk().getPartA()).isEqualTo("A");
+        assertThat(mapped.getPk().getPartB()).isEqualTo("B");
+    }
+
+    @Test
+    void valueBindersForEmbeddedIdEntityExtractKeyColumnValues() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var entity = new CompositeKeyFixtureEntity(new CompositeKeyFixture("A", "B"), "payload");
+
+        var stmt = mock(PreparedStatement.class);
+        var columnOrder = mt.getManagedColumnLabels().stream().toList();
+        var binders = mt.getValueBindersForEntity(entity);
+        for (int i = 0; i < binders.size(); i++) {
+            binders.get(i).bind(stmt, i + 1);
+        }
+
+        verify(stmt).setString(eq(columnOrder.indexOf("part_a") + 1), eq("A"));
+        verify(stmt).setString(eq(columnOrder.indexOf("part_b") + 1), eq("B"));
+        verify(stmt).setString(eq(columnOrder.indexOf("payload") + 1), eq("payload"));
+    }
+
+    @Test
+    void extractKeyFromNullEntityIsRejected() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+
+        assertThatThrownBy(() -> mt.extractKeyFromEntity(null))
+                .as("extractKey must reject null entity explicitly rather than NPEing on reflection")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void getValueBindersForNullEntityIsRejected() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+
+        assertThatThrownBy(() -> mt.getValueBindersForEntity(null))
+                .as("getValueBindersForEntity must reject null explicitly")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void createEntitySnapshotForNullEntityIsRejected() throws Exception {
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+
+        assertThatThrownBy(() -> mt.createEntitySnapshot(null))
+                .as("createEntitySnapshot must reject null explicitly")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

@@ -5,6 +5,9 @@ import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
+import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -145,5 +148,147 @@ class ManagedColumnTest {
         var column = columnFor("title");
         assertThatThrownBy(() -> column.getFieldValue(null))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<UserFixtureEntity, Object> userColumnFor(String columnName) {
+        var descriptor = TestDescriptors.descriptorFor(UserFixtureEntity.class);
+        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
+            if (cp.fieldDescriptor().columnName().equals(columnName)) {
+                return new ManagedColumn(cp.fieldDescriptor(), cp);
+            }
+        }
+        throw new IllegalArgumentException("No such column: " + columnName);
+    }
+
+    @Test
+    void getFieldValueOnEmbeddedColumnReadsThroughNestedPath() {
+        var column = userColumnFor("first_name");
+        var user = new UserFixtureEntity(1L, "Acme", new NameFixture(null, "Alice", "Smith"));
+
+        assertThat(column.getFieldValue(user)).isEqualTo("Alice");
+    }
+
+    @Test
+    void getFieldValueOnDeeplyNestedColumnWalksThroughAllIntermediates() {
+        var column = userColumnFor("title_before");
+        var user = new UserFixtureEntity(1L, "Acme",
+                new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+
+        assertThat(column.getFieldValue(user)).isEqualTo("Dr.");
+    }
+
+    @Test
+    void getFieldValueReturnsNullWhenIntermediateEmbeddedIsMissing() {
+        var column = userColumnFor("first_name");
+        var user = new UserFixtureEntity(1L, "Acme", null);
+
+        assertThat(column.getFieldValue(user))
+                .as("missing embeddable short-circuits read to null")
+                .isNull();
+    }
+
+    @Test
+    void binderForEntityOnEmbeddedColumnBindsNestedValue() throws Exception {
+        var column = userColumnFor("first_name");
+        var user = new UserFixtureEntity(1L, "Acme", new NameFixture(null, "Alice", "Smith"));
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForEntity(user).bind(stmt, 3);
+
+        verify(stmt).setString(3, "Alice");
+    }
+
+    @Test
+    void saturateColumnOnEmbeddedColumnAutoInstantiatesMissingParent() throws Exception {
+        var column = userColumnFor("first_name");
+        var user = new UserFixtureEntity();
+        var rs = mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("Alice");
+
+        column.saturateColumnForEntity(user, rs, 1);
+
+        assertThat(user.getName())
+                .as("saturating a nested column must create the missing embeddable rather than silently dropping the value")
+                .isNotNull();
+        assertThat(user.getName().getFirstName()).isEqualTo("Alice");
+    }
+
+    @Test
+    void saturateColumnOnDeeplyNestedColumnAutoInstantiatesAllIntermediates() throws Exception {
+        var column = userColumnFor("title_before");
+        var user = new UserFixtureEntity();
+        var rs = mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("Dr.");
+
+        column.saturateColumnForEntity(user, rs, 1);
+
+        assertThat(user.getName()).isNotNull();
+        assertThat(user.getName().getTitles()).isNotNull();
+        assertThat(user.getName().getTitles().getTitleBefore()).isEqualTo("Dr.");
+    }
+
+    @Test
+    void binderForEntityWithNullEntityIsRejected() {
+        var column = columnFor("title");
+
+        assertThatThrownBy(() -> column.binderForEntity(null))
+                .as("binderForEntity(null) is a caller bug and must be rejected explicitly")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void saturateColumnForEntityWithNullEntityIsRejected() {
+        var column = columnFor("title");
+        var rs = mock(ResultSet.class);
+
+        assertThatThrownBy(() -> column.saturateColumnForEntity(null, rs, 1))
+                .as("saturating into a null entity is a caller bug and must be rejected explicitly")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void saturateColumnForEntityWithNullResultSetIsRejected() {
+        var column = columnFor("title");
+        var book = new BookEntity();
+
+        assertThatThrownBy(() -> column.saturateColumnForEntity(book, null, 1))
+                .as("saturating from a null ResultSet is a caller bug and must be rejected explicitly")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void saturateColumnReadsNullFromResultSetAndWritesNullIntoEntity() throws Exception {
+        var column = columnFor("title");
+        var book = new BookEntity();
+        book.setTitle("existing");
+        var rs = mock(ResultSet.class);
+        when(rs.getString(3)).thenReturn(null);
+
+        column.saturateColumnForEntity(book, rs, 3);
+
+        assertThat(book.getTitle())
+                .as("SQL NULL in the ResultSet must land as Java null, overwriting any existing value")
+                .isNull();
+    }
+
+    @Test
+    void saturateColumnOnEmbeddedColumnPreservesExistingEmbeddedParent() throws Exception {
+        var column = userColumnFor("first_name");
+        var existingName = new NameFixture(new TitlesFixture("Dr.", "PhD"), "old", "last");
+        var user = new UserFixtureEntity();
+        user.setName(existingName);
+        var rs = mock(ResultSet.class);
+        when(rs.getString(1)).thenReturn("Alice");
+
+        column.saturateColumnForEntity(user, rs, 1);
+
+        assertThat(user.getName())
+                .as("existing embeddable must not be replaced when saturating a nested column")
+                .isSameAs(existingName);
+        assertThat(user.getName().getFirstName()).isEqualTo("Alice");
+        assertThat(user.getName().getTitles().getTitleBefore())
+                .as("sibling values inside the preserved embeddable must survive")
+                .isEqualTo("Dr.");
     }
 }

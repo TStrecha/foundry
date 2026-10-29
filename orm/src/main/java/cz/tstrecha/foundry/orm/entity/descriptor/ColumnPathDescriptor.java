@@ -37,7 +37,7 @@ public record ColumnPathDescriptor<T>(
     @SneakyThrows
     public void writeValueToRoot(Object root, Object value) {
         if(rootValue) {
-            throw new IllegalStateException("Cannot write to root");
+            throw new UnsupportedOperationException("Cannot write to root");
         }
 
         var current = root;

@@ -5,6 +5,11 @@ import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
+import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -179,5 +184,89 @@ class EntityPersisterTest {
         var persister = bookPersister();
         assertThatThrownBy(() -> persister.buildEntityKey(null))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private EntityPersister<UserFixtureEntity> userPersister() throws Exception {
+        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class)));
+    }
+
+    private EntityPersister<CompositeKeyFixtureEntity> compositePersister() throws Exception {
+        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class)));
+    }
+
+    @Test
+    void generateInsertForEmbeddedEntityIncludesAllFlattenedColumns() throws Exception {
+        var user = new UserFixtureEntity(1L, "Acme",
+                new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+
+        var sql = userPersister().generateInsert(user).buildSql();
+
+        assertThat(sql)
+                .as("INSERT for an entity with @Embedded fields covers every leaf column, not the parent reference")
+                .contains("id", "company_name", "first_name", "last_name", "title_before", "title_after");
+        assertThat(sql).contains("VALUES (?,?,?,?,?,?)");
+    }
+
+    @Test
+    void generateSelectByIdForEmbeddedIdProducesWhereClauseOnAllKeyColumns() throws Exception {
+        var sql = compositePersister().generateSelectById(new CompositeKeyFixture("A", "B")).buildSql();
+
+        assertThat(sql)
+                .as("SELECT ... WHERE for an @EmbeddedId filters by every column of the embedded key")
+                .contains("\"part_a\" = ?")
+                .contains("\"part_b\" = ?");
+    }
+
+    @Test
+    void generateSelectByIdForScalarIdIsUnaffectedByEmbeddedIdSupport() throws Exception {
+        var sql = bookPersister().generateSelectById(42L).buildSql();
+
+        assertThat(sql).contains(" WHERE \"id\" = ?");
+    }
+
+    @Test
+    void buildEntityKeyForEmbeddedIdReturnsEmbeddedKeyInstance() throws Exception {
+        var persister = compositePersister();
+        var entity = new CompositeKeyFixtureEntity(new CompositeKeyFixture("A", "B"), "payload");
+
+        var key = persister.buildEntityKey(entity);
+
+        assertThat(key.entityType()).isEqualTo(CompositeKeyFixtureEntity.class);
+        assertThat(key.key())
+                .as("key for @EmbeddedId is the embeddable instance itself")
+                .isEqualTo(new CompositeKeyFixture("A", "B"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void generateUpdateForEmbeddedEntityIncludesNestedColumnInSetClause() throws Exception {
+        var persister = userPersister();
+        var user = new UserFixtureEntity(1L, "Acme",
+                new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+        var mt = persister.getManagedType();
+        var firstNameCol = (ManagedColumn<UserFixtureEntity, ?>) mt.getColumns().get("first_name");
+
+        var sql = persister.generateUpdate(1L, user, List.of(firstNameCol)).buildSql();
+
+        assertThat(sql)
+                .as("UPDATE SET clause for a nested column must refer to the leaf column name, not the embedded parent reference")
+                .contains(" SET ")
+                .contains("first_name");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void generateUpdateForEmbeddedIdEntityWhereClauseContainsAllKeyColumns() throws Exception {
+        var persister = compositePersister();
+        var entity = new CompositeKeyFixtureEntity(new CompositeKeyFixture("A", "B"), "newPayload");
+        var mt = persister.getManagedType();
+        var payloadCol = (ManagedColumn<CompositeKeyFixtureEntity, ?>) mt.getColumns().get("payload");
+
+        var sql = persister.generateUpdate(new CompositeKeyFixture("A", "B"), entity, List.of(payloadCol)).buildSql();
+
+        assertThat(sql)
+                .as("UPDATE ... WHERE for an entity with @EmbeddedId must filter by every key column")
+                .contains("\"part_a\" = ?")
+                .contains("\"part_b\" = ?");
     }
 }
