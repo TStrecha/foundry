@@ -3,7 +3,6 @@ package cz.tstrecha.foundry.orm.entity.descriptor.code;
 import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 public record EmbeddedFieldDescriptor(
         boolean isId,

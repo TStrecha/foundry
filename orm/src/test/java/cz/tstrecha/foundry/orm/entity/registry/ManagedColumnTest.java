@@ -1,7 +1,10 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -17,19 +20,25 @@ import static org.mockito.Mockito.when;
 
 class ManagedColumnTest {
 
-    private ManagedColumn<BookEntity, Object> columnFor(String name) throws Exception {
-        return new ManagedColumn<>(name, BookEntity.class.getDeclaredField(bookFieldFor(name)));
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<BookEntity, Object> columnFor(String columnName) {
+        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
+        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
+            if (cp.fieldDescriptor().columnName().equals(columnName)) {
+                return new ManagedColumn(cp.fieldDescriptor(), cp);
+            }
+        }
+        throw new IllegalArgumentException("No such column: " + columnName);
     }
 
-    private String bookFieldFor(String columnLabel) {
-        return switch (columnLabel) {
-            case "id" -> "id";
-            case "title" -> "title";
-            case "author" -> "author";
-            case "genre" -> "genre";
-            case "page_count" -> "pageCount";
-            default -> throw new IllegalArgumentException(columnLabel);
-        };
+    private ColumnPathDescriptor<?> pathFor(String columnName) {
+        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
+        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
+            if (cp.fieldDescriptor().columnName().equals(columnName)) {
+                return cp;
+            }
+        }
+        throw new IllegalArgumentException("No such column: " + columnName);
     }
 
     @Test
@@ -118,22 +127,16 @@ class ManagedColumnTest {
     }
 
     @Test
-    void nullColumnLabelInConstructorIsRejected() throws Exception {
-        var field = BookEntity.class.getDeclaredField("title");
-        assertThatThrownBy(() -> new ManagedColumn<>(null, field))
+    void nullFieldDescriptorInConstructorIsRejected() {
+        var somePath = pathFor("title");
+        assertThatThrownBy(() -> new ManagedColumn<>(null, somePath))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void blankColumnLabelInConstructorIsRejected() throws Exception {
-        var field = BookEntity.class.getDeclaredField("title");
-        assertThatThrownBy(() -> new ManagedColumn<>("   ", field))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void nullFieldInConstructorIsRejected() {
-        assertThatThrownBy(() -> new ManagedColumn<>("x", null))
+    void nullPathDescriptorInConstructorIsRejected() {
+        var someFieldDescriptor = pathFor("title").fieldDescriptor();
+        assertThatThrownBy(() -> new ManagedColumn<>(someFieldDescriptor, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

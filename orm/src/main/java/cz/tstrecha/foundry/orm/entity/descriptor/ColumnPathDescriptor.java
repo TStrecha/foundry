@@ -16,6 +16,10 @@ public record ColumnPathDescriptor<T>(
 
     @SneakyThrows
     public T readValueFromRoot(Object root) {
+        if(root == null) {
+            return null;
+        }
+
         if(rootValue) {
             return (T) root;
         }

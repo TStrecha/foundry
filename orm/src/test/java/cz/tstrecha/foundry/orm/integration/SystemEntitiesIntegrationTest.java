@@ -34,7 +34,7 @@ class SystemEntitiesIntegrationTest extends AbstractPostgresIntegrationTest {
     void findAllColumnsReturnsAtLeastBookColumns() {
         try (var em = context.openSession()) {
             var columns = em.findAll(ColumnsEntity.class);
-            assertThat(columns).extracting(ColumnsEntity::getColumnName)
+            assertThat(columns).extracting(c -> c.getId().getColumnName())
                     .contains("id", "title");
         }
     }

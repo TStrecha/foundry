@@ -4,6 +4,7 @@ import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EntityPersisterTest {
 
     private EntityPersister<BookEntity> bookPersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(BookEntity.class));
+        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)));
     }
 
     @Test
@@ -55,7 +56,7 @@ class EntityPersisterTest {
 
         var updateSql = persister.generateUpdate(
                 1L, book,
-                List.of((ManagedColumn<BookEntity, ?>) persister.getManagedType().getIdColumn()));
+                List.of((ManagedColumn<BookEntity, ?>) persister.getManagedType().getIdColumns().get(0)));
         var text = updateSql.buildSql();
         assertThat(text).startsWith("UPDATE book SET ").contains(" WHERE \"id\" = ?");
     }
@@ -153,7 +154,7 @@ class EntityPersisterTest {
         var book = new BookEntity();
         book.setId(1L);
         assertThatThrownBy(() -> persister.generateUpdate(null, book,
-                List.of(persister.getManagedType().getIdColumn())))
+                List.of(persister.getManagedType().getIdColumns().get(0))))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

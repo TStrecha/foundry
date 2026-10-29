@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity.context;
 import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.PersonEntity;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PersistenceContextTest {
 
     private EntityPersister<BookEntity> bookPersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(BookEntity.class));
+        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)));
     }
 
     private BookEntity book(long id) {
@@ -108,7 +109,7 @@ class PersistenceContextTest {
     void sameKeyValueAcrossTypesIsIsolated() throws Exception {
         var ctx = new PersistenceContext();
         var bookPersister = bookPersister();
-        var personPersister = new EntityPersister<>(new ManagedType<>(PersonEntity.class));
+        var personPersister = new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class)));
 
         var b = book(1L);
         var p = new PersonEntity();

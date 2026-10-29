@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity;
 
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
+import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.EntitiesMarker;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ class EntityManagerUnitTest {
         var ds = mock(DataSource.class);
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
-        var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
+        var registry = new PersisterRegistry(new DescriptorRegistry(List.of(EntitiesMarker.class)));
         return new EntityManager(new ConnectionProvider(ds), registry);
     }
 
@@ -96,7 +97,7 @@ class EntityManagerUnitTest {
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
         doThrow(new SQLException("rollback failed")).when(conn).rollback();
-        var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
+        var registry = new PersisterRegistry(new DescriptorRegistry(List.of(EntitiesMarker.class)));
         try (var em = new EntityManager(new ConnectionProvider(ds), registry)) {
             var original = new RuntimeException("original");
             assertThatThrownBy(() -> em.runInTransaction(tx -> { throw original; }))
@@ -109,7 +110,7 @@ class EntityManagerUnitTest {
 
     @Test
     void nullProviderInConstructorIsRejected() throws Exception {
-        var registry = new PersisterRegistry(List.of(EntitiesMarker.class));
+        var registry = new PersisterRegistry(new DescriptorRegistry(List.of(EntitiesMarker.class)));
         assertThatThrownBy(() -> new EntityManager(null, registry))
                 .isInstanceOf(IllegalArgumentException.class);
     }

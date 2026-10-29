@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.registry;
 
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.broken.ChildWithInheritedColumnEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.IdWithoutColumnEntity;
 import cz.tstrecha.foundry.orm.fixtures.broken.MultipleIdsEntity;
@@ -28,24 +29,24 @@ class ManagedTypeTest {
 
     @Test
     void readsTableNameFromAnnotation() throws Exception {
-        assertThat(new ManagedType<>(BookEntity.class).getTableName()).isEqualTo("book");
+        assertThat(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)).getTableName()).isEqualTo("book");
     }
 
     @Test
     void collectsAnnotatedColumns() throws Exception {
-        assertThat(new ManagedType<>(BookEntity.class).getManagedColumnLabels())
+        assertThat(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)).getManagedColumnLabels())
                 .containsExactlyInAnyOrder("id", "title", "author", "genre", "page_count");
     }
 
     @Test
     void identifiesIdColumn() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
-        assertThat(mt.getIdColumn().getColumnLabel()).isEqualTo("id");
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
     }
 
     @Test
     void extractsKeyFromEntity() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = new BookEntity();
         book.setId(7L);
         assertThat(mt.extractKeyFromEntity(book)).isEqualTo(7L);
@@ -53,7 +54,7 @@ class ManagedTypeTest {
 
     @Test
     void entitySnapshotHasOneValuePerColumn() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = new BookEntity();
         book.setId(1L);
         book.setTitle("T");
@@ -68,7 +69,7 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperPopulatesAllAnnotatedColumns() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var rs = mock(ResultSet.class);
         when(rs.getLong(1)).thenReturn(5L);
         when(rs.getString(2)).thenReturn("Title");
@@ -88,14 +89,14 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperRejectsUnknownColumnLabel() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         assertThatThrownBy(() -> mt.createRowMapper(List.of("not_a_column")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void valueBindersMatchColumnOrder() throws Exception {
-        var mt = new ManagedType<>(PersonEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class));
         var person = new PersonEntity();
         person.setId(1L);
         person.setFirstName("Alice");
@@ -114,44 +115,44 @@ class ManagedTypeTest {
 
     @Test
     void typeWithoutTableAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(NoTableEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(NoTableEntity.class)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void typeWithoutIdAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(NoIdEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(NoIdEntity.class)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void unsupportedTypeFailsAtRegistration() {
-        assertThatThrownBy(() -> new ManagedType<>(UnsupportedTypeEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(UnsupportedTypeEntity.class)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void entityWithMultipleIdsIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(MultipleIdsEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(MultipleIdsEntity.class)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void idAnnotationWithoutColumnAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(IdWithoutColumnEntity.class))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(IdWithoutColumnEntity.class)))
                 .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void inheritedAnnotatedFieldsAreDiscovered() throws Exception {
-        var mt = new ManagedType<>(ChildWithInheritedColumnEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(ChildWithInheritedColumnEntity.class));
         assertThat(mt.getManagedColumnLabels()).contains("id", "name");
-        assertThat(mt.getIdColumn().getColumnLabel()).isEqualTo("id");
+        assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
     }
 
     @Test
     void managedColumnLabelsAreReturnedInInsertionOrder() throws Exception {
-        var mt = new ManagedType<>(PersonEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class));
         assertThat(mt.getManagedColumnLabels())
                 .as("column order must be deterministic — otherwise INSERT column list and value binders can misalign")
                 .containsExactly("id", "first_name", "last_name");
@@ -165,7 +166,7 @@ class ManagedTypeTest {
 
     @Test
     void getColumnByIndexAgreesWithSnapshotOrdering() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = new BookEntity();
         book.setId(1L);
         book.setTitle("T");

@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.context;
 
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
+import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +23,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void unchangedEntityIsReportedAsClean() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         assertThat(bag.createDirtyEntityBagIfDirty()).isNull();
@@ -30,7 +31,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void mutatedFieldIsDetectedAsDirty() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         book.setTitle("Updated");
@@ -44,7 +45,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void dirtyBagListsAllChangedColumnsEvenWhenMultiple() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         book.setTitle("new");
@@ -59,7 +60,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void enumFieldChangeIsDetected() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         book.setGenre(Genre.POETRY);
@@ -68,7 +69,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void snapshotRefreshesAfterReturningDirtyBag() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         book.setTitle("Changed");
@@ -78,7 +79,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void snapshotIsStoredAsUnmodifiableList() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         var book = book();
         var bag = new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), book, mt);
         assertThat(bag.getSnapshot()).isUnmodifiable();
@@ -86,7 +87,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void nullEntityInConstructorIsRejected() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         assertThatThrownBy(() ->
                         new EntityPersistenceBag<>(new EntityKey<>(BookEntity.class, 1L), null, mt))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -94,7 +95,7 @@ class EntityPersistenceBagTest {
 
     @Test
     void nullKeyInConstructorIsRejected() throws Exception {
-        var mt = new ManagedType<>(BookEntity.class);
+        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
         assertThatThrownBy(() ->
                         new EntityPersistenceBag<>(null, book(), mt))
                 .isInstanceOf(IllegalArgumentException.class);

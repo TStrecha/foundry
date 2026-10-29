@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.integration;
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
 import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
+import cz.tstrecha.foundry.orm.entity.system.ColumnsEntityId;
 import cz.tstrecha.foundry.orm.fixtures.good.EntitiesMarker;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,8 +42,8 @@ class ColumnsEntityIntegrationTest extends AbstractPostgresIntegrationTest {
         try (var em = context.openSession()) {
             var columns = em.findAll(ColumnsEntity.class);
             var labelColumn = columns.stream()
-                    .filter(c -> "varchar_table".equals(c.getTableName())
-                            && "label".equals(c.getColumnName()))
+                    .filter(c -> "varchar_table".equals(c.getId().getTableName())
+                            && "label".equals(c.getId().getColumnName()))
                     .findFirst().orElseThrow();
             assertThat(labelColumn.getCharacterMaximumLength()).isEqualTo("50");
         }
@@ -52,14 +53,14 @@ class ColumnsEntityIntegrationTest extends AbstractPostgresIntegrationTest {
     void bookTableColumnsAreVisibleThroughSystemEntity() {
         try (var em = context.openSession()) {
             var columns = em.findAll(ColumnsEntity.class);
-            assertThat(columns).extracting(ColumnsEntity::getColumnName).contains("id", "label");
+            assertThat(columns).extracting(c -> c.getId().getColumnName()).contains("id", "label");
         }
     }
 
     @Test
     void findOnColumnsEntityWithUnknownIdReturnsEmpty() {
         try (var em = context.openSession()) {
-            var found = em.find(ColumnsEntity.class, "no_such_table_anywhere");
+            var found = em.find(ColumnsEntity.class, new ColumnsEntityId("nope", null, null, null));
             assertThat(found).isEmpty();
         }
     }
