@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity.descriptor.code;
 import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -18,7 +19,7 @@ public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedF
             return new ColumnFieldDescriptor(field);
         }
 
-        if(field.isAnnotationPresent(Embedded.class)) {
+        if(field.isAnnotationPresent(Embedded.class) || field.isAnnotationPresent(EmbeddedId.class)) {
             return new EmbeddedFieldDescriptor(field, (EmbeddableTypeDescriptor) registry.computeIfAbsent(field.getType()));
         }
 

@@ -1,7 +1,11 @@
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
-import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
-import cz.tstrecha.foundry.rttest.entity.*;
+import cz.tstrecha.foundry.rttest.entity.AccountType;
+import cz.tstrecha.foundry.rttest.entity.Entities;
+import cz.tstrecha.foundry.rttest.entity.MoneyTransactionEntity;
+import cz.tstrecha.foundry.rttest.entity.Titles;
+import cz.tstrecha.foundry.rttest.entity.UserEntity;
+import cz.tstrecha.foundry.rttest.entity.UserName;
 import lombok.SneakyThrows;
 
 private final String URL = "jdbc:postgresql://localhost:5432/portify";

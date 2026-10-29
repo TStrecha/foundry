@@ -1,6 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.descriptor.code;
 
-import jakarta.persistence.Id;
+import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -12,7 +12,7 @@ public record EmbeddedFieldDescriptor(
 ) implements FieldDescriptor {
 
     public EmbeddedFieldDescriptor(Field field, EmbeddableTypeDescriptor embeddableTypeDescriptor) {
-        var id = field.isAnnotationPresent(Id.class);
+        var id = field.isAnnotationPresent(EmbeddedId.class);
         field.setAccessible(true);
 
         this(id, field, embeddableTypeDescriptor);
