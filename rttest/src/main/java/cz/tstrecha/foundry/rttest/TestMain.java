@@ -1,5 +1,7 @@
 import cz.tstrecha.foundry.orm.FoundryContext;
 import cz.tstrecha.foundry.orm.config.FoundryConfiguration;
+import cz.tstrecha.foundry.orm.entity.system.ColumnsEntity;
+import cz.tstrecha.foundry.orm.entity.system.ColumnsEntityId;
 import cz.tstrecha.foundry.rttest.entity.AccountType;
 import cz.tstrecha.foundry.rttest.entity.Entities;
 import cz.tstrecha.foundry.rttest.entity.MoneyTransactionEntity;
@@ -24,9 +26,13 @@ void main() {
 
     try(var entityManager = context.openSession()) {
         entityManager.runInTransaction(_ -> {
-            var columnsTable = entityManager.findAll(MoneyTransactionEntity.class);
+            var column = entityManager.find(ColumnsEntity.class,
+                    new ColumnsEntityId("portify", "public", "app_user", "company_name"));
+            System.out.println(column);
 
-            columnsTable.forEach(entity -> {
+            var moneyTransactions = entityManager.findAll(MoneyTransactionEntity.class);
+
+            moneyTransactions.forEach(entity -> {
                 System.out.println(entity.getIdentifier());
             });
 

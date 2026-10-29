@@ -1,12 +1,13 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
+import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
+import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.code.FieldDescriptor;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.row.RowMapper;
-import cz.tstrecha.foundry.orm.util.ReflectionUtils;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.Getter;
+import lombok.SneakyThrows;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
@@ -15,53 +16,40 @@ import java.util.*;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
+@Getter
 public class ManagedType<T> {
 
-    @Getter
     private final Class<T> type;
-    @Getter
-    private final ManagedColumn<T, ?> idColumn;
-    @Getter
     private final String tableName;
 
     private final ManagedTypeCreator<T> entityCreator;
-    private final Map<String, ManagedColumn<T, ?>> columns;
+    private final Map<String, ManagedColumn<T, ?>> columns = new HashMap<>();
+    private final List<ManagedColumn<T, ?>> idColumns = new ArrayList<>();
 
-    public ManagedType(Class<T> type) throws NoSuchMethodException {
-        requireNotNullArgument(type, "type");
+    private final FieldDescriptor idFieldDescriptor;
 
-        this.type = type;
+    public ManagedType(EntityDescriptor<T> entityDescriptor) throws NoSuchMethodException {
+        requireNotNullArgument(entityDescriptor, "entityDescriptor");
+
+        this.type = entityDescriptor.type();
+        this.tableName = entityDescriptor.tableName();
         this.entityCreator = new ManagedTypeCreator<>(type);
-        this.tableName = Optional.ofNullable(type.getAnnotation(Entity.class))
-                .map(Entity::name)
-                .orElseThrow(() -> new IllegalArgumentException("Class " + type.getName() + " cannot be managed, as it is not annotated with @Table"));
 
-        this.columns = new LinkedHashMap<>();
-        ManagedColumn<T, ?> idColumn = null;
-
-        for (var field : ReflectionUtils.findAllFieldsInClass(type)) {
-            var columnDefinition = field.getAnnotation(Column.class);
-            if(columnDefinition == null) {
-                continue;
-            }
-
-            var managedColumn = new ManagedColumn<T, Object>(columnDefinition.name(), field);
-            columns.put(columnDefinition.name(), managedColumn);
-
-            if(field.getAnnotation(Id.class) != null) {
-                if(idColumn != null) {
-                    throw new IllegalStateException("Multiple ids found for " + type.getName());
-                }
-
-                idColumn = managedColumn;
-            }
+        for(var columnPath : PathFinder.buildColumnPaths(entityDescriptor)) {
+            var managedColumn = createManagedColumnFromPath(columnPath);
+            columns.put(columnPath.fieldDescriptor().columnName(), managedColumn);
         }
 
-        if(idColumn == null) {
-            throw new IllegalStateException("No id column found for " + type.getName());
+        for(var columnPath : PathFinder.buildIdPaths(entityDescriptor)) {
+            var managedColumn = createManagedColumnFromPath(columnPath);
+            idColumns.add(managedColumn);
         }
 
-        this.idColumn = idColumn;
+        this.idFieldDescriptor = entityDescriptor.idDescriptor();
+    }
+
+    private <F> ManagedColumn<T, F> createManagedColumnFromPath(ColumnPathDescriptor<F> pathDescriptor) {
+        return new ManagedColumn<>(pathDescriptor.fieldDescriptor(), pathDescriptor);
     }
 
     public RowMapper<T> createRowMapper(List<String> columnLabels) {
@@ -109,8 +97,9 @@ public class ManagedType<T> {
         return columns.values().stream().map(e -> e.getFieldValue(entity)).toList();
     }
 
+    @SneakyThrows
     public Object extractKeyFromEntity(T entity) {
-        return getIdColumn().getFieldValue(entity);
+        return idFieldDescriptor.field().get(entity);
     }
 
     //TODO: Better way

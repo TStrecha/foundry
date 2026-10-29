@@ -13,6 +13,7 @@ public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedF
     Class<?> getFieldType();
     boolean isId();
     List<ColumnFieldDescriptor> flattenStructureToColumns();
+    Field field();
 
     static FieldDescriptor fromField(Field field, DescriptorRegistry registry) {
         if(field.isAnnotationPresent(Column.class)) {

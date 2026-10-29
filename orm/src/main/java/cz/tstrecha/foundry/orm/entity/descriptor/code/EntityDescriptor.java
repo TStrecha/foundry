@@ -8,14 +8,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-public record EntityDescriptor(
-        Class<?> type,
+public record EntityDescriptor<E>(
+        Class<E> type,
         String tableName,
         List<FieldDescriptor> fields,
         FieldDescriptor idDescriptor
 ) implements TypeDescriptor {
 
-    public EntityDescriptor(Class<?> entityType, DescriptorRegistry registry) {
+    public EntityDescriptor(Class<E> entityType, DescriptorRegistry registry) {
         var fields = ReflectionUtils.findAllFieldsInClass(entityType);
 
         var tableName = entityType.getAnnotation(Entity.class).name();

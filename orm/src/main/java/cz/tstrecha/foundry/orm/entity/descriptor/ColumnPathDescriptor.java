@@ -1,16 +1,25 @@
 package cz.tstrecha.foundry.orm.entity.descriptor;
 
+import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import lombok.SneakyThrows;
 
-import java.lang.reflect.Field;
-
 public record ColumnPathDescriptor<T>(
-        Field field,
-        FieldPath fieldPath
+        Class<T> type,
+        ColumnFieldDescriptor fieldDescriptor,
+        FieldPath fieldPath,
+        boolean rootValue
 ) {
+
+    public ColumnPathDescriptor(ColumnFieldDescriptor fieldDescriptor, FieldPath fieldPath, boolean rootValue) {
+        this((Class<T>) fieldDescriptor.getFieldType(), fieldDescriptor, fieldPath, rootValue);
+    }
 
     @SneakyThrows
     public T readValueFromRoot(Object root) {
+        if(rootValue) {
+            return (T) root;
+        }
+
         var current = root;
         for(var node : fieldPath.nodes()) {
             current = node.get(current);
@@ -18,11 +27,15 @@ public record ColumnPathDescriptor<T>(
                 return null;
             }
         }
-        return (T) this.field.get(current);
+        return (T) this.fieldDescriptor.field().get(current);
     }
 
     @SneakyThrows
     public void writeValueToRoot(Object root, Object value) {
+        if(rootValue) {
+            throw new IllegalStateException("Cannot write to root");
+        }
+
         var current = root;
         for(var node : fieldPath.nodes()) {
             if(node.get(current) == null) {
@@ -30,7 +43,7 @@ public record ColumnPathDescriptor<T>(
             }
             current = node.get(current);
         }
-        this.field.set(current, value);
+        this.fieldDescriptor.field().set(current, value);
     }
 
 }

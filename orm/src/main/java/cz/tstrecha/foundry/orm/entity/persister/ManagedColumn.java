@@ -1,5 +1,9 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
+import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.FieldPath;
+import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
@@ -21,26 +25,26 @@ import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgume
 public class ManagedColumn<E, F> {
 
     private final String columnLabel;
-    private final Field field;
-    private final TypeHandler<F> typeHandler;
     private final Class<F> fieldType;
+    private final ColumnFieldDescriptor fieldDescriptor;
+    private final ColumnPathDescriptor<F> columnPathDescriptor;
+    private final TypeHandler<F> typeHandler;
 
-    public ManagedColumn(String columnLabel, Field field) {
-        requireNotEmptyArgument(columnLabel, "columnLabel");
-        requireNotNullArgument(field, "field");
-
-        this.columnLabel = columnLabel;
-        this.field = field;
-        this.field.setAccessible(true);
+    public ManagedColumn(ColumnFieldDescriptor fieldDescriptor, ColumnPathDescriptor<F> columnPathDescriptor) {
+        this.columnPathDescriptor = columnPathDescriptor;
+        this.fieldDescriptor = fieldDescriptor;
+        this.columnLabel = fieldDescriptor.columnName();
 
         EnumType enumType = EnumType.ORDINAL;
 
-        if(field.getType().isEnum()) {
-            enumType = Optional.ofNullable(field.getAnnotation(Enumerated.class)).map(Enumerated::value).orElse(enumType);
+        if(columnPathDescriptor.type().isEnum()) {
+            enumType = Optional.ofNullable(fieldDescriptor.field().getAnnotation(Enumerated.class))
+                    .map(Enumerated::value)
+                    .orElse(enumType);
         }
 
-        this.fieldType = (Class<F>) field.getType();
-        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(field.getType(), enumType);
+        this.fieldType = columnPathDescriptor.type();
+        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(columnPathDescriptor.type(), enumType);
     }
 
     public ParameterBinder binderForEntity(E entity) {
@@ -53,22 +57,17 @@ public class ManagedColumn<E, F> {
     }
 
     public ParameterBinder binderForAnyValue(Object value) {
-        var typedValue = fieldType.cast(value);
+        var typedValue = columnPathDescriptor.readValueFromRoot(value);
         return (statement, index) -> typeHandler.write(statement, index, typedValue);
     }
 
     public F getFieldValue(E entity) {
         requireNotNullArgument(entity, "entity");
-
-        try {
-            return (F) field.get(entity);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("This should never happen!", e);
-        }
+        return columnPathDescriptor.readValueFromRoot(entity);
     }
 
     public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
         var parsedValue = typeHandler.read(resultSet, index);
-        field.set(entity, parsedValue);
+        columnPathDescriptor.writeValueToRoot(entity, parsedValue);
     }
 }

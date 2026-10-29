@@ -3,7 +3,6 @@ package cz.tstrecha.foundry.orm.entity.descriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.EmbeddableTypeDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.TypeDescriptor;
-import cz.tstrecha.foundry.orm.entity.descriptor.db.SequenceDescriptor;
 import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
@@ -12,7 +11,6 @@ import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +53,7 @@ public class DescriptorRegistry {
             return new EmbeddableTypeDescriptor(type, this);
         }
         if(type.isAnnotationPresent(Entity.class)) {
-            return new EntityDescriptor(type, this);
+            return new EntityDescriptor<>(type, this);
         }
 
         throw new IllegalArgumentException("Type " + type + " cannot be described");

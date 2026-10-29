@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import lombok.Data;
 
 @Data
-@Entity(name = "information_schema.fields")
+@Entity(name = "information_schema.columns")
 public class ColumnsEntity {
 
     @EmbeddedId

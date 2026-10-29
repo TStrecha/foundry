@@ -1,17 +1,12 @@
 package cz.tstrecha.foundry.orm.entity;
 
+import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
+import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
 import cz.tstrecha.foundry.orm.entity.persister.EntityPersister;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedType;
-import cz.tstrecha.foundry.orm.entity.system.SystemEntities;
-import jakarta.persistence.Entity;
-import org.reflections.Reflections;
-import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -19,26 +14,15 @@ public class PersisterRegistry {
 
     private final Map<Class<?>, EntityPersister<?>> persisters = new HashMap<>();
 
-    public PersisterRegistry(List<Class<?>> scanningRoots) throws NoSuchMethodException {
-        requireNotNullArgument(scanningRoots, "scanningRoots");
+    public PersisterRegistry(DescriptorRegistry descriptorRegistry) throws NoSuchMethodException {
+        requireNotNullArgument(descriptorRegistry, "descriptorRegistry");
 
-        var packageNames = Stream.concat(scanningRoots.stream(), Stream.of(SystemEntities.class))
-                .map(Class::getPackageName)
-                .toArray(String[]::new);
-        var filterBuilder = new FilterBuilder();
-        for (var pkg : packageNames) {
-            filterBuilder.includePackage(pkg);
-        }
-        var reflectionsConfig = new ConfigurationBuilder()
-                .forPackages(packageNames)
-                .filterInputsBy(filterBuilder);
-        var reflections = new Reflections(reflectionsConfig);
-
-        var entities = reflections.getTypesAnnotatedWith(Entity.class);
-        for (var entity : entities) {
-            var managedType = new ManagedType<>(entity);
-            var persister = new EntityPersister<>(managedType);
-            persisters.put(entity, persister);
+        for (var descriptor : descriptorRegistry.getTypes().values()) {
+            if(descriptor instanceof EntityDescriptor<?> entityDescriptor) {
+                var managedType = new ManagedType<>(entityDescriptor);
+                var persister = new EntityPersister<>(managedType);
+                persisters.put(descriptor.type(), persister);
+            }
         }
     }
 

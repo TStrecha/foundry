@@ -4,40 +4,40 @@ import cz.tstrecha.foundry.orm.entity.descriptor.code.*;
 import lombok.SneakyThrows;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class PathFinder {
 
-    public static List<ColumnPathDescriptor<?>> buildColumnPaths(EntityDescriptor entityDescriptor) {
+    public static List<ColumnPathDescriptor<?>> buildColumnPaths(EntityDescriptor<?> entityDescriptor) {
         return walkFields(new FieldPath(), entityDescriptor.fields());
     }
 
-    public static List<ColumnPathDescriptor<?>> buildIdPaths(EntityDescriptor entityDescriptor) {
-        return walkField(false, new FieldPath(), entityDescriptor.idDescriptor());
+    public static List<ColumnPathDescriptor<?>> buildIdPaths(EntityDescriptor<?> entityDescriptor) {
+        if(entityDescriptor.idDescriptor() instanceof ColumnFieldDescriptor column) {
+            return List.of(new ColumnPathDescriptor<>(column, new FieldPath(), true));
+        }
+        if(entityDescriptor.idDescriptor() instanceof EmbeddedFieldDescriptor embedded) {
+            return walkFields(new FieldPath(), embedded.embeddableTypeDescriptor().fields());
+        }
+
+        throw new IllegalArgumentException("Unsupported entity descriptor type: " + entityDescriptor.idDescriptor().getClass().getName());
     }
 
     @SneakyThrows
     private static List<ColumnPathDescriptor<?>> walkFields(FieldPath path, List<FieldDescriptor> fields) {
-        var result = new ArrayList<ColumnPathDescriptor<?>>();
-
-        for(var field : fields) {
-            result.addAll(walkField(true, path, field));
-        }
-
-        return result;
+        return fields.stream()
+                .map(field -> walkField(path, field))
+                .flatMap(Collection::stream).toList();
     }
 
     @SneakyThrows
-    private static List<ColumnPathDescriptor<?>> walkField(boolean appendField, FieldPath path, FieldDescriptor field) {
+    private static List<ColumnPathDescriptor<?>> walkField(FieldPath path, FieldDescriptor field) {
         if(field instanceof ColumnFieldDescriptor column) {
-            return List.of(new ColumnPathDescriptor<>(column.field(), path));
+                return List.of(new ColumnPathDescriptor<>(column, path, false));
         } else if (field instanceof EmbeddedFieldDescriptor embedded) {
-            if(appendField) {
                 var subPath = path.appendNew(embedded.field());
                 return walkFields(subPath, embedded.embeddableTypeDescriptor().fields());
-            } else {
-                return walkFields(path, embedded.embeddableTypeDescriptor().fields());
-            }
         }
 
         throw new IllegalArgumentException("Unsupported field type: " + field);

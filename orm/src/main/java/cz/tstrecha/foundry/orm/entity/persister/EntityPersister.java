@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
 import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
+import cz.tstrecha.foundry.orm.operation.filter.FilterClause;
 import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
 import cz.tstrecha.foundry.orm.operation.sql.SelectSql;
 import cz.tstrecha.foundry.orm.operation.filter.SqlOperator;
@@ -36,12 +37,13 @@ public class EntityPersister<T> {
     public SelectSql generateSelectById(Object id) {
         requireNotNullArgument(id, "id");
 
-        var idColumn = managedType.getIdColumn();
-        var idBinder = idColumn.binderForAnyValue(id);
+        var clauses = managedType.getIdColumns().stream()
+                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForAnyValue(id)))
+                .toList();
 
         return select(managedType.getManagedColumnLabels())
                 .from(managedType.getTableName())
-                .where(new FilterBuilder(idColumn.getColumnLabel(), SqlOperator.EQUALS, idBinder));
+                .where(new FilterBuilder(clauses));
     }
 
     @SneakyThrows
@@ -69,12 +71,14 @@ public class EntityPersister<T> {
                         column -> column.binderForEntity(typedEntity),
                         (x, _) -> x,
                         LinkedHashMap::new));
-        var idColumn = managedType.getIdColumn();
-        var idBinder = idColumn.binderForAnyValue(id);
+
+        var clauses = managedType.getIdColumns().stream()
+                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForAnyValue(id)))
+                .toList();
 
         return update(managedType.getTableName())
                 .set(valueSetters)
-                .where(new FilterBuilder(idColumn.getColumnLabel(), SqlOperator.EQUALS, idBinder));
+                .where(new FilterBuilder(clauses));
     }
 
     public SelectSql generateSelect() {

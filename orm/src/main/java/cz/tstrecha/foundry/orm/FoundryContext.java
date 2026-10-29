@@ -25,7 +25,7 @@ public class FoundryContext {
         requireNotNullArgument(foundryConfiguration, "foundryConfiguration");
 
         this.descriptorRegistry = new DescriptorRegistry(foundryConfiguration.scanningRoots());
-        this.persisterRegistry = new PersisterRegistry(foundryConfiguration.scanningRoots());
+        this.persisterRegistry = new PersisterRegistry(descriptorRegistry);
 
         var dataSource = new PGSimpleDataSource();
         dataSource.setURL(foundryConfiguration.url());
