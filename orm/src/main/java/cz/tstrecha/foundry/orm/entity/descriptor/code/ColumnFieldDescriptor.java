@@ -25,8 +25,4 @@ public record ColumnFieldDescriptor(
         return field.getType();
     }
 
-    @Override
-    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
-        return List.of(this);
-    }
 }

@@ -19,11 +19,6 @@ public record EmbeddedFieldDescriptor(
     }
 
     @Override
-    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
-        return embeddableTypeDescriptor.flattenStructureToColumns();
-    }
-
-    @Override
     public Class<?> getFieldType() {
         return field.getType();
     }

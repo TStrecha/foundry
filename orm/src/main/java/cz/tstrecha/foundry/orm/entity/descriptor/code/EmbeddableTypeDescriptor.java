@@ -21,10 +21,4 @@ public record EmbeddableTypeDescriptor(
         this(type, fields);
     }
 
-    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
-        return fields.stream()
-                .map(FieldDescriptor::flattenStructureToColumns)
-                .flatMap(Collection::stream)
-                .toList();
-    }
 }

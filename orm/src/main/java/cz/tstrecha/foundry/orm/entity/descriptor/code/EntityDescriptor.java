@@ -4,7 +4,6 @@ import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import cz.tstrecha.foundry.orm.util.ReflectionUtils;
 import jakarta.persistence.Entity;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,13 +29,5 @@ public record EntityDescriptor<E>(
                 .orElseThrow();
 
         this(entityType, tableName, fieldDescriptors, idDescriptor);
-    }
-
-    @Override
-    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
-        return fields.stream()
-                .map(FieldDescriptor::flattenStructureToColumns)
-                .flatMap(Collection::stream)
-                .toList();
     }
 }
