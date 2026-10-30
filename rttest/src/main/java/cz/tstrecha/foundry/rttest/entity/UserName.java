@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserName {
 
-//    @Embedded
-    private Titles titles;
-
     @Column(name = "first_name")
     private String firstName;
 
