@@ -112,4 +112,34 @@ class TypeHandlerResolverTest {
         assertThatThrownBy(() -> TypeHandlerResolver.findHandlerForType(null, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    private enum StringFirstEnum { A, B }
+
+    private enum OrdinalFirstEnum { X, Y }
+
+    @Test
+    void sameEnumClassWithStringThenOrdinalReturnsDistinctHandlers() {
+        var string = TypeHandlerResolver.findHandlerForType(StringFirstEnum.class, EnumType.STRING);
+        var ordinal = TypeHandlerResolver.findHandlerForType(StringFirstEnum.class, EnumType.ORDINAL);
+
+        assertThat(string)
+                .as("the first STRING call resolves to the string handler")
+                .isInstanceOf(EnumStringHandler.class);
+        assertThat(ordinal)
+                .as("a subsequent ORDINAL call for the SAME enum class must resolve to the ordinal handler — the cache cannot pin the handler to the class alone, it must key by (class, enumType), otherwise two fields of the same enum type with different @Enumerated modes silently share the first-call handler")
+                .isInstanceOf(EnumOrdinalHandler.class);
+    }
+
+    @Test
+    void sameEnumClassWithOrdinalThenStringReturnsDistinctHandlers() {
+        var ordinal = TypeHandlerResolver.findHandlerForType(OrdinalFirstEnum.class, EnumType.ORDINAL);
+        var string = TypeHandlerResolver.findHandlerForType(OrdinalFirstEnum.class, EnumType.STRING);
+
+        assertThat(ordinal)
+                .as("the first ORDINAL call resolves to the ordinal handler")
+                .isInstanceOf(EnumOrdinalHandler.class);
+        assertThat(string)
+                .as("a subsequent STRING call for the SAME enum class must resolve to the string handler — the cache cannot pin the handler to the class alone, it must key by (class, enumType)")
+                .isInstanceOf(EnumStringHandler.class);
+    }
 }

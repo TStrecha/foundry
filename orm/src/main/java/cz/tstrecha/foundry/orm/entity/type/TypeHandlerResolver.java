@@ -14,12 +14,13 @@ import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgumen
 
 public class TypeHandlerResolver {
 
-    private static final Map<Type, TypeHandler<?>> handlerLookupMap = new HashMap<>();
+    private static final Map<ResolverCacheKey, TypeHandler<?>> handlerLookupMap = new HashMap<>();
 
     public static TypeHandler<?> findHandlerForType(Class<?> type, EnumType enumType) {
         requireNotNullArgument(type, "type");
 
-        return handlerLookupMap.computeIfAbsent(type, _ -> TypeHandlerResolver.resolveForType(type, enumType));
+        var cacheKey = new ResolverCacheKey(type, enumType);
+        return handlerLookupMap.computeIfAbsent(cacheKey, _ -> TypeHandlerResolver.resolveForType(type, enumType));
     }
 
     private static TypeHandler<?> resolveForType(Type fieldType, EnumType enumType) {
@@ -65,5 +66,9 @@ public class TypeHandlerResolver {
         }
 
         throw new IllegalArgumentException("Could not find a value parser for type " + fieldType.getTypeName());
+    }
+
+    private record ResolverCacheKey(Type type, EnumType enumType) {
+
     }
 }
