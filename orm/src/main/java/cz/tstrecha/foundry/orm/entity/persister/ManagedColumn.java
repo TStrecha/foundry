@@ -7,11 +7,13 @@ import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
+import cz.tstrecha.foundry.orm.operation.sql.SequenceNextValueQuery;
 import lombok.Getter;
 import lombok.ToString;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -26,12 +28,15 @@ public class ManagedColumn<E, F> {
     private final ColumnPathDescriptor<F> columnPathDescriptor;
     private final TypeHandler<F> typeHandler;
 
+    private final SequencePersister sequencePersister;
+
     public ManagedColumn(ManagedColumnDescriptor<F> managedColumnDescriptor) {
         requireNotNullArgument(managedColumnDescriptor, "managedColumnDescriptor");
 
         this.columnDescriptor = managedColumnDescriptor.column();
         this.fieldDescriptor = managedColumnDescriptor.field();
         this.columnPathDescriptor = managedColumnDescriptor.entityPath();
+        this.sequencePersister = Optional.ofNullable(managedColumnDescriptor.sequenceDescriptor()).map(SequencePersister::new).orElse(null);
         this.columnLabel = fieldDescriptor.columnName();
 
         this.fieldType = columnPathDescriptor.type();
@@ -70,9 +75,30 @@ public class ManagedColumn<E, F> {
         return columnPathDescriptor.readValueFromRoot(entity);
     }
 
+    public void setFieldValue(E entity, Object value) {
+        requireNotNullArgument(entity, "entity");
+        columnPathDescriptor.writeValueToRoot(entity, value);
+    }
+
+    public SequenceNextValueQuery createValueGenerationQuery() {
+        if(!canGenerateValue()) {
+            throw new IllegalStateException("Can't generate value for column " + columnLabel);
+        }
+
+        return sequencePersister.createSequenceQuery();
+    }
+
     public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
         requireNotNullArgument(resultSet, "resultSet");
         var parsedValue = typeHandler.read(resultSet, index);
         columnPathDescriptor.writeValueToRoot(entity, parsedValue);
+    }
+
+    public boolean canGenerateValue() {
+        return sequencePersister != null;
+    }
+
+    public boolean isId() {
+        return fieldDescriptor.isId();
     }
 }

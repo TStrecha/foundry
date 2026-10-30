@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ColumnPathDescriptorTest {
 
     private ColumnPathDescriptor<?> columnPathFor(Class<?> entity, String columnName) {
-        return PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(entity)).stream()
+        return TestDescriptors.columnPathsFor(entity).stream()
                 .filter(p -> columnName.equals(p.field().columnName()))
                 .findFirst().orElseThrow()
                 .entityPath();
     }
 
     private ColumnPathDescriptor<?> idPathFor(Class<?> entity, String columnName) {
-        return PathFinder.buildIdPaths(TestDescriptors.descriptorFor(entity)).stream()
+        return TestDescriptors.idPathsFor(entity).stream()
                 .filter(p -> columnName.equals(p.field().columnName()))
                 .findFirst().orElseThrow()
                 .entityPath();

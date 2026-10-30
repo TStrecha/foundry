@@ -69,12 +69,14 @@ public class EntityManager implements Closeable {
     public <T> void persist(T entity) {
         requireNotNullArgument(entity, "entity");
 
-        var entityType = entity.getClass();
+        var entityType = (Class<T>) entity.getClass();
         if(!persisterRegistry.persisterExists(entityType)) {
             throw new IllegalArgumentException("No persister found for type " + entityType.getName());
         }
 
         var entityPersister = persisterRegistry.getPersister(entityType);
+        entityPersister.generateValues(entity, session);
+
         var sql = entityPersister.generateInsert(entity);
 
         var rowsCreated = session.insert(sql);
@@ -82,7 +84,7 @@ public class EntityManager implements Closeable {
             throw new IllegalStateException("Database created 0 new rows.");
         }
 
-        persistenceContext.makeEntityHandled((EntityPersister<T>) entityPersister, entity);
+        persistenceContext.makeEntityHandled(entityPersister, entity);
     }
 
     public void flush() {

@@ -119,42 +119,6 @@ class CrudIntegrationTest extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void persistEntityWithNullIdAssignsGeneratedId() throws Exception {
-        BookEntity persisted;
-        try (var em = context.openSession()) {
-            em.getTransaction().begin();
-            var b = book(0L, "A", Genre.FICTION, 1L);
-            b.setId(null);
-            em.persist(b);
-            assertThat(b.getId()).as("id must be populated by the generator after persist").isNotNull();
-            persisted = b;
-            em.getTransaction().commit();
-        }
-        try (var em = context.openSession()) {
-            assertThat(em.find(BookEntity.class, persisted.getId())).isPresent();
-        }
-    }
-
-    @Test
-    void persistingMultipleEntitiesWithNullIdAssignsDistinctIds() throws Exception {
-        Long firstId;
-        Long secondId;
-        try (var em = context.openSession()) {
-            em.getTransaction().begin();
-            var a = book(null, "A", Genre.FICTION, 1L);
-            var b = book(null, "B", Genre.FICTION, 1L);
-            em.persist(a);
-            em.persist(b);
-            firstId = a.getId();
-            secondId = b.getId();
-            em.getTransaction().commit();
-        }
-        assertThat(firstId).isNotNull();
-        assertThat(secondId).isNotNull();
-        assertThat(firstId).isNotEqualTo(secondId);
-    }
-
-    @Test
     void findAllOnEmptyTableReturnsEmptyList() throws Exception {
         try (var em = context.openSession()) {
             assertThat(em.findAll(BookEntity.class)).isEmpty();

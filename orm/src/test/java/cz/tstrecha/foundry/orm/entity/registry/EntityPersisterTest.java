@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EntityPersisterTest {
 
     private EntityPersister<BookEntity> bookPersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)));
+        return new EntityPersister<>(TestDescriptors.managedTypeFor(BookEntity.class));
     }
 
     @Test
@@ -187,11 +187,11 @@ class EntityPersisterTest {
     }
 
     private EntityPersister<UserFixtureEntity> userPersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class)));
+        return new EntityPersister<>(TestDescriptors.managedTypeFor(UserFixtureEntity.class));
     }
 
     private EntityPersister<CompositeKeyFixtureEntity> compositePersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class)));
+        return new EntityPersister<>(TestDescriptors.managedTypeFor(CompositeKeyFixtureEntity.class));
     }
 
     @Test

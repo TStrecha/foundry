@@ -13,13 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ManagedColumnDescriptorTest {
 
     private ManagedColumnDescriptor<?> columnPathFor(Class<?> entity, String columnName) {
-        return PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(entity)).stream()
+        return TestDescriptors.columnPathsFor(entity).stream()
                 .filter(p -> columnName.equals(p.field().columnName()))
                 .findFirst().orElseThrow();
     }
 
     private ManagedColumnDescriptor<?> idPathFor(Class<?> entity, String columnName) {
-        return PathFinder.buildIdPaths(TestDescriptors.descriptorFor(entity)).stream()
+        return TestDescriptors.idPathsFor(entity).stream()
                 .filter(p -> columnName.equals(p.field().columnName()))
                 .findFirst().orElseThrow();
     }

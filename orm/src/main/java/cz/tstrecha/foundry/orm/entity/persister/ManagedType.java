@@ -1,6 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
-import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
@@ -29,19 +29,20 @@ public class ManagedType<T> {
 
     private final FieldDescriptor idFieldDescriptor;
 
-    public ManagedType(EntityDescriptor<T> entityDescriptor) throws NoSuchMethodException {
+    public ManagedType(EntityDescriptor<T> entityDescriptor, DescriptorRegistry descriptorRegistry) throws NoSuchMethodException {
         requireNotNullArgument(entityDescriptor, "entityDescriptor");
+        requireNotNullArgument(descriptorRegistry, "descriptorRegistry");
 
         this.type = entityDescriptor.type();
         this.tableName = entityDescriptor.tableDescriptor().tableName();
         this.entityCreator = new ManagedTypeCreator<>(type);
 
-        for(var columnPath : PathFinder.buildColumnPaths(entityDescriptor)) {
+        for(var columnPath : PathFinder.buildColumnPaths(entityDescriptor, descriptorRegistry)) {
             var managedColumn = createManagedColumnFromPath(columnPath);
             columns.put(managedColumn.getColumnLabel(), managedColumn);
         }
 
-        for(var columnPath : PathFinder.buildIdPaths(entityDescriptor)) {
+        for(var columnPath : PathFinder.buildIdPaths(entityDescriptor, descriptorRegistry)) {
             var managedColumn = createManagedColumnFromPath(columnPath);
             idColumns.add(managedColumn);
         }

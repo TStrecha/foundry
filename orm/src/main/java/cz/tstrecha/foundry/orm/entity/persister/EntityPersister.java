@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
+import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
 import cz.tstrecha.foundry.orm.operation.filter.FilterClause;
 import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
@@ -98,4 +99,16 @@ public class EntityPersister<T> {
         return this.managedType::createRowMapper;
     }
 
+    public void generateValues(T entity, DBSession session) {
+        managedType.getColumns().values().stream()
+                .filter(ManagedColumn::isId)
+                .filter(ManagedColumn::canGenerateValue)
+                .filter(idColumn -> idColumn.getFieldValue(entity) == null)
+                .forEach(managedColumn -> {
+                    var sql = managedColumn.createValueGenerationQuery();
+                    var result = session.selectNextValueFromSequence(sql);
+
+                    managedColumn.setFieldValue(entity, result);
+                });
+    }
 }

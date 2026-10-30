@@ -3,7 +3,9 @@ package cz.tstrecha.foundry.orm.entity.descriptor;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
 import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
+import cz.tstrecha.foundry.orm.fixtures.generated.SequencedWidgetEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
+import cz.tstrecha.foundry.orm.fixtures.pathfinderunknowngen.UnknownGeneratorEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,7 +15,7 @@ class PathFinderTest {
 
     @Test
     void buildColumnPathsExposesOnePathPerLeafColumnForScalarEntity() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(BookEntity.class));
+        var paths = TestDescriptors.columnPathsFor(BookEntity.class);
 
         assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("id", "title", "author", "genre", "page_count");
@@ -21,7 +23,7 @@ class PathFinderTest {
 
     @Test
     void topLevelColumnPathHasEmptyFieldPath() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(BookEntity.class));
+        var paths = TestDescriptors.columnPathsFor(BookEntity.class);
 
         assertThat(paths).allSatisfy(cp ->
                 assertThat(cp.entityPath().fieldPath().nodes())
@@ -31,7 +33,7 @@ class PathFinderTest {
 
     @Test
     void buildColumnPathsFlattensEmbeddedChildren() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var paths = TestDescriptors.columnPathsFor(UserFixtureEntity.class);
 
         assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("id", "company_name", "first_name", "last_name", "title_before", "title_after");
@@ -39,7 +41,7 @@ class PathFinderTest {
 
     @Test
     void pathForOneLevelEmbeddedColumnHasSingleIntermediateNode() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var paths = TestDescriptors.columnPathsFor(UserFixtureEntity.class);
 
         var firstName = paths.stream()
                 .filter(p -> "first_name".equals(p.field().columnName()))
@@ -53,7 +55,7 @@ class PathFinderTest {
 
     @Test
     void pathForNestedEmbeddedColumnHasTwoIntermediateNodes() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var paths = TestDescriptors.columnPathsFor(UserFixtureEntity.class);
 
         var titleBefore = paths.stream()
                 .filter(p -> "title_before".equals(p.field().columnName()))
@@ -67,7 +69,7 @@ class PathFinderTest {
 
     @Test
     void allEntityRootedPathsAreMarkedAsNonRootValue() {
-        var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var paths = TestDescriptors.columnPathsFor(UserFixtureEntity.class);
 
         assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().rootValue())
                 .as("paths produced by buildColumnPaths are always entity-rooted — root is never the value itself")
@@ -76,7 +78,7 @@ class PathFinderTest {
 
     @Test
     void buildIdPathsForScalarIdReturnsSinglePathWithRootValueMarker() {
-        var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(BookEntity.class));
+        var paths = TestDescriptors.idPathsFor(BookEntity.class);
 
         assertThat(paths).hasSize(1);
         assertThat(paths.get(0).entityPath().rootValue())
@@ -88,7 +90,7 @@ class PathFinderTest {
 
     @Test
     void buildIdPathsForEmbeddedIdReturnsPathPerKeyColumn() {
-        var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var paths = TestDescriptors.idPathsFor(CompositeKeyFixtureEntity.class);
 
         assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("part_a", "part_b");
@@ -96,7 +98,7 @@ class PathFinderTest {
 
     @Test
     void embeddedIdPathsHaveEmptyFieldPathBecauseRootIsTheKeyInstance() {
-        var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var paths = TestDescriptors.idPathsFor(CompositeKeyFixtureEntity.class);
 
         assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().fieldPath().nodes())
                 .as("for an embedded id, root is already the key instance — no intermediate traversal needed")
@@ -105,7 +107,7 @@ class PathFinderTest {
 
     @Test
     void embeddedIdPathsAreNotMarkedAsRootValue() {
-        var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var paths = TestDescriptors.idPathsFor(CompositeKeyFixtureEntity.class);
 
         assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().rootValue())
                 .as("embedded id columns require one leaf field access from the key instance — root is not the value")
@@ -114,29 +116,87 @@ class PathFinderTest {
 
     @Test
     void buildIdPathsForScalarIdLeafFieldPointsToTheIdField() {
-        var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(BookEntity.class));
+        var paths = TestDescriptors.idPathsFor(BookEntity.class);
 
         assertThat(paths.get(0).field().field().getName()).isEqualTo("id");
     }
 
     @Test
     void buildColumnPathsWithNullEntityDescriptorIsRejected() {
-        assertThatThrownBy(() -> PathFinder.buildColumnPaths(null))
+        var registry = TestDescriptors.descriptorAndRegistryFor(BookEntity.class).registry();
+        assertThatThrownBy(() -> PathFinder.buildColumnPaths(null, registry))
                 .as("the public entry point must reject null — bad input is a caller bug, not a silent NPE deep in the walker")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void buildIdPathsWithNullEntityDescriptorIsRejected() {
-        assertThatThrownBy(() -> PathFinder.buildIdPaths(null))
+        var registry = TestDescriptors.descriptorAndRegistryFor(BookEntity.class).registry();
+        assertThatThrownBy(() -> PathFinder.buildIdPaths(null, registry))
                 .as("the public entry point must reject null — bad input is a caller bug, not a silent NPE deep in the walker")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
+    void columnWithoutGeneratedValueCarriesNoSequenceDescriptor() {
+        var paths = TestDescriptors.columnPathsFor(BookEntity.class);
+
+        assertThat(paths)
+                .as("none of BookEntity's columns use @GeneratedValue — their ManagedColumnDescriptor must carry no sequence metadata")
+                .allSatisfy(p -> assertThat(p.sequenceDescriptor()).isNull());
+    }
+
+    @Test
+    void scalarIdWithoutGeneratedValueCarriesNoSequenceDescriptorInIdPath() {
+        var paths = TestDescriptors.idPathsFor(BookEntity.class);
+
+        assertThat(paths.get(0).sequenceDescriptor())
+                .as("a caller-assigned @Id has no generator — its id path must not advertise one")
+                .isNull();
+    }
+
+    @Test
+    void columnWithGeneratedValueCarriesResolvedSequenceInManagedColumnDescriptor() {
+        var idPath = TestDescriptors.columnPathsFor(SequencedWidgetEntity.class).stream()
+                .filter(p -> "id".equals(p.field().columnName()))
+                .findFirst().orElseThrow();
+
+        assertThat(idPath.sequenceDescriptor())
+                .as("resolution happens at descriptor build time — the ManagedColumnDescriptor must already carry the SequenceDescriptor so runtime does not need the registry")
+                .isNotNull();
+        assertThat(idPath.sequenceDescriptor().name()).isEqualTo("widget_seq_gen");
+        assertThat(idPath.sequenceDescriptor().sequenceName()).isEqualTo("widget_seq");
+    }
+
+    @Test
+    void scalarIdWithGeneratedValueCarriesResolvedSequenceInIdPath() {
+        var paths = TestDescriptors.idPathsFor(SequencedWidgetEntity.class);
+
+        assertThat(paths).hasSize(1);
+        assertThat(paths.get(0).sequenceDescriptor())
+                .as("the id path drives value generation during persist — it must carry the resolved SequenceDescriptor just like the entity-rooted path does")
+                .isNotNull();
+        assertThat(paths.get(0).sequenceDescriptor().sequenceName()).isEqualTo("widget_seq");
+    }
+
+    @Test
+    void generatedValueReferencingUnknownGeneratorIsRejected() {
+        assertThatThrownBy(() -> TestDescriptors.columnPathsFor(UnknownGeneratorEntity.class))
+                .as("@GeneratedValue(generator = \"...\") that points at no declared @SequenceGenerator is a misconfiguration — must fail fast at descriptor build time, not later with an NPE in SequencePersister")
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void generatedValueReferencingUnknownGeneratorIsRejectedForIdPathToo() {
+        assertThatThrownBy(() -> TestDescriptors.idPathsFor(UnknownGeneratorEntity.class))
+                .as("unknown-generator contract must apply regardless of which walk discovered the column — id paths carry the same risk")
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void entityRootedAndIdRootedPathsForSameColumnReferenceSameLeafField() {
-        var columnPaths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
-        var idPaths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var columnPaths = TestDescriptors.columnPathsFor(CompositeKeyFixtureEntity.class);
+        var idPaths = TestDescriptors.idPathsFor(CompositeKeyFixtureEntity.class);
 
         var partAColumnPath = columnPaths.stream()
                 .filter(p -> "part_a".equals(p.field().columnName()))

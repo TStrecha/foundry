@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity.descriptor.code;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 
 import java.lang.reflect.Field;
@@ -15,7 +16,9 @@ public record ColumnFieldDescriptor(
 
         boolean isId,
         String columnName,
-        EnumType enumType
+        EnumType enumType,
+
+        GeneratorDescriptor generatorDescriptor
 ) implements FieldDescriptor {
 
     public ColumnFieldDescriptor(Field field) {
@@ -32,7 +35,11 @@ public record ColumnFieldDescriptor(
                     .orElse(EnumType.ORDINAL);
         }
 
-        this(field, type, id, columnName, enumType);
+        var generatorDescriptor = Optional.ofNullable(field.getAnnotation(GeneratedValue.class))
+                .map(GeneratorDescriptor::new)
+                .orElse(null);
+
+        this(field, type, id, columnName, enumType, generatorDescriptor);
     }
 
     @Override

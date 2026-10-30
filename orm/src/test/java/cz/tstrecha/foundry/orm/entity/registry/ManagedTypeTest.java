@@ -34,24 +34,24 @@ class ManagedTypeTest {
 
     @Test
     void readsTableNameFromAnnotation() throws Exception {
-        assertThat(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)).getTableName()).isEqualTo("book");
+        assertThat(TestDescriptors.managedTypeFor(BookEntity.class).getTableName()).isEqualTo("book");
     }
 
     @Test
     void collectsAnnotatedColumns() throws Exception {
-        assertThat(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)).getManagedColumnLabels())
+        assertThat(TestDescriptors.managedTypeFor(BookEntity.class).getManagedColumnLabels())
                 .containsExactlyInAnyOrder("id", "title", "author", "genre", "page_count");
     }
 
     @Test
     void identifiesIdColumn() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
     }
 
     @Test
     void extractsKeyFromEntity() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         var book = new BookEntity();
         book.setId(7L);
         assertThat(mt.extractKeyFromEntity(book)).isEqualTo(7L);
@@ -59,7 +59,7 @@ class ManagedTypeTest {
 
     @Test
     void entitySnapshotHasOneValuePerColumn() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         var book = new BookEntity();
         book.setId(1L);
         book.setTitle("T");
@@ -74,7 +74,7 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperPopulatesAllAnnotatedColumns() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         var rs = mock(ResultSet.class);
         when(rs.getLong(1)).thenReturn(5L);
         when(rs.getString(2)).thenReturn("Title");
@@ -94,14 +94,14 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperRejectsUnknownColumnLabel() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         assertThatThrownBy(() -> mt.createRowMapper(List.of("not_a_column")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void valueBindersMatchColumnOrder() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class));
+        var mt = TestDescriptors.managedTypeFor(PersonEntity.class);
         var person = new PersonEntity();
         person.setId(1L);
         person.setFirstName("Alice");
@@ -120,63 +120,73 @@ class ManagedTypeTest {
 
     @Test
     void typeWithoutTableAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(NoTableEntity.class)))
+        assertThatThrownBy(() -> TestDescriptors.isolatedManagedTypeFor(NoTableEntity.class))
                 .as("an entity class without @Entity cannot be managed — must be rejected with a clear error, not NPE on annotation lookup")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void typeWithoutIdAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(NoIdEntity.class)))
+        assertThatThrownBy(() -> TestDescriptors.isolatedManagedTypeFor(NoIdEntity.class))
                 .as("an entity without any @Id column cannot be managed and must be rejected explicitly")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void unsupportedTypeFailsAtRegistration() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(UnsupportedTypeEntity.class)))
+        assertThatThrownBy(() -> TestDescriptors.isolatedManagedTypeFor(UnsupportedTypeEntity.class))
                 .as("entity with a @Column field whose Java type has no TypeHandler must fail at registration, not at first use")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void entityWithMultipleIdsIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(MultipleIdsEntity.class)))
+        assertThatThrownBy(() -> TestDescriptors.isolatedManagedTypeFor(MultipleIdsEntity.class))
                 .as("more than one @Id on scalar columns is a composite-key setup; use @EmbeddedId instead — must be rejected explicitly, not silently take the first one")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void fieldWithIdAnnotationButNoColumnAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(IdWithoutColumnEntity.class)))
+        assertThatThrownBy(() -> TestDescriptors.isolatedManagedTypeFor(IdWithoutColumnEntity.class))
                 .as("@Id on a field without @Column is a programmer mistake — must be surfaced with a field-level error that names @Column, not silently skipped so the entity looks id-less")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void inheritedAnnotatedFieldsAreDiscovered() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.isolatedDescriptorFor(ChildWithInheritedColumnEntity.class));
+        var mt = TestDescriptors.isolatedManagedTypeFor(ChildWithInheritedColumnEntity.class);
         assertThat(mt.getManagedColumnLabels()).contains("id", "name");
         assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
     }
 
     @Test
     void managedColumnLabelsAreReturnedInInsertionOrder() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class));
+        var mt = TestDescriptors.managedTypeFor(PersonEntity.class);
         assertThat(mt.getManagedColumnLabels())
                 .as("column order must be deterministic — otherwise INSERT column list and value binders can misalign")
                 .containsExactly("id", "first_name", "last_name");
     }
 
     @Test
-    void nullTypeIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(null))
+    void nullDescriptorIsRejected() {
+        var registry = TestDescriptors.descriptorAndRegistryFor(BookEntity.class).registry();
+        assertThatThrownBy(() -> new ManagedType<>(null, registry))
+                .as("a null entity descriptor is a caller bug — must be rejected explicitly, not deferred to an NPE deep in the setup")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void nullRegistryIsRejected() {
+        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
+        assertThatThrownBy(() -> new ManagedType<>(descriptor, null))
+                .as("a null registry is a caller bug — must be rejected explicitly, not deferred to an NPE when a generator lookup happens later")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void scalarIdEntityExposesOneIdColumn() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
 
         assertThat(mt.getIdColumns())
                 .as("a scalar @Id entity has exactly one id column")
@@ -186,7 +196,7 @@ class ManagedTypeTest {
 
     @Test
     void embeddedEntityExposesAllFlattenedLeafColumnLabels() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
 
         assertThat(mt.getManagedColumnLabels())
                 .as("every leaf @Column reachable through @Embedded appears as its own managed column")
@@ -195,7 +205,7 @@ class ManagedTypeTest {
 
     @Test
     void embeddedIdEntityExposesOneIdColumnPerKeyPart() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(CompositeKeyFixtureEntity.class);
 
         assertThat(mt.getIdColumns())
                 .as("an @EmbeddedId with N @Column fields yields N id columns")
@@ -205,7 +215,7 @@ class ManagedTypeTest {
 
     @Test
     void extractKeyFromEntityReturnsEmbeddedKeyInstanceForEmbeddedId() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(CompositeKeyFixtureEntity.class);
         var entity = new CompositeKeyFixtureEntity();
         var key = new CompositeKeyFixture("A", "B");
         entity.setPk(key);
@@ -218,7 +228,7 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperPopulatesEmbeddedColumnsIntoNestedInstance() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var rs = mock(ResultSet.class);
         when(rs.getLong(1)).thenReturn(7L);
         when(rs.getString(2)).thenReturn("Acme");
@@ -237,7 +247,7 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperPopulatesDeeplyNestedColumnsIntoDoublyEmbeddedInstance() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("Dr.");
 
@@ -251,7 +261,7 @@ class ManagedTypeTest {
 
     @Test
     void valueBindersForEmbeddedEntityReadThroughNestedPath() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var user = new UserFixtureEntity(1L, "Acme", new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
 
         var stmt = mock(PreparedStatement.class);
@@ -272,7 +282,7 @@ class ManagedTypeTest {
     @Test
     @SuppressWarnings("unchecked")
     void createEntitySnapshotIncludesEmbeddedColumnValues() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var user = new UserFixtureEntity(1L, "Acme", new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
 
         List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
@@ -285,7 +295,7 @@ class ManagedTypeTest {
     @Test
     @SuppressWarnings("unchecked")
     void snapshotForEntityWithMissingEmbeddedHasNullsForNestedColumns() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(UserFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var user = new UserFixtureEntity(1L, "Acme", null);
 
         List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
@@ -297,7 +307,7 @@ class ManagedTypeTest {
 
     @Test
     void rowMapperForEmbeddedIdEntityAutoInstantiatesEmbeddedKey() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(CompositeKeyFixtureEntity.class);
         var rs = mock(ResultSet.class);
         when(rs.getString(1)).thenReturn("A");
         when(rs.getString(2)).thenReturn("B");
@@ -314,7 +324,7 @@ class ManagedTypeTest {
 
     @Test
     void valueBindersForEmbeddedIdEntityExtractKeyColumnValues() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
+        var mt = TestDescriptors.managedTypeFor(CompositeKeyFixtureEntity.class);
         var entity = new CompositeKeyFixtureEntity(new CompositeKeyFixture("A", "B"), "payload");
 
         var stmt = mock(PreparedStatement.class);
@@ -331,7 +341,7 @@ class ManagedTypeTest {
 
     @Test
     void extractKeyFromNullEntityIsRejected() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
 
         assertThatThrownBy(() -> mt.extractKeyFromEntity(null))
                 .as("extractKey must reject null entity explicitly rather than NPEing on reflection")
@@ -340,7 +350,7 @@ class ManagedTypeTest {
 
     @Test
     void getValueBindersForNullEntityIsRejected() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
 
         assertThatThrownBy(() -> mt.getValueBindersForEntity(null))
                 .as("getValueBindersForEntity must reject null explicitly")
@@ -349,7 +359,7 @@ class ManagedTypeTest {
 
     @Test
     void createEntitySnapshotForNullEntityIsRejected() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
 
         assertThatThrownBy(() -> mt.createEntitySnapshot(null))
                 .as("createEntitySnapshot must reject null explicitly")
@@ -358,7 +368,7 @@ class ManagedTypeTest {
 
     @Test
     void getColumnByIndexAgreesWithSnapshotOrdering() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class));
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         var book = new BookEntity();
         book.setId(1L);
         book.setTitle("T");

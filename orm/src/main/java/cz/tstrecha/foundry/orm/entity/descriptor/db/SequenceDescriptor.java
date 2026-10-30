@@ -1,8 +1,14 @@
 package cz.tstrecha.foundry.orm.entity.descriptor.db;
 
+import jakarta.persistence.SequenceGenerator;
+
 public record SequenceDescriptor(
         String name,
-        Integer incrementBy
+        String sequenceName
 ) {
+
+    public SequenceDescriptor(SequenceGenerator sequenceGenerator) {
+        this(sequenceGenerator.name(), sequenceGenerator.sequenceName());
+    }
 
 }

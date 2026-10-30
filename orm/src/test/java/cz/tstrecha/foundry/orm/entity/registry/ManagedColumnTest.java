@@ -1,6 +1,5 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
-import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
@@ -9,6 +8,7 @@ import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
+import cz.tstrecha.foundry.orm.fixtures.generated.SequencedWidgetEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +27,7 @@ class ManagedColumnTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ManagedColumn<BookEntity, Object> columnFor(String columnName) {
-        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
-        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
+        for (var cp : TestDescriptors.columnPathsFor(BookEntity.class)) {
             if (cp.field().columnName().equals(columnName)) {
                 return new ManagedColumn(cp);
             }
@@ -137,8 +136,7 @@ class ManagedColumnTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ManagedColumn<UserFixtureEntity, Object> userColumnFor(String columnName) {
-        var descriptor = TestDescriptors.descriptorFor(UserFixtureEntity.class);
-        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
+        for (var cp : TestDescriptors.columnPathsFor(UserFixtureEntity.class)) {
             if (cp.field().columnName().equals(columnName)) {
                 return new ManagedColumn(cp);
             }
@@ -259,15 +257,13 @@ class ManagedColumnTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ManagedColumn<Object, Object> scalarIdColumn() {
-        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
-        var idPath = PathFinder.buildIdPaths(descriptor).get(0);
+        var idPath = TestDescriptors.idPathsFor(BookEntity.class).get(0);
         return new ManagedColumn(idPath);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ManagedColumn<Object, Object> embeddedIdColumn(String columnName) {
-        var descriptor = TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class);
-        for (var cp : PathFinder.buildIdPaths(descriptor)) {
+        for (var cp : TestDescriptors.idPathsFor(CompositeKeyFixtureEntity.class)) {
             if (cp.field().columnName().equals(columnName)) {
                 return new ManagedColumn(cp);
             }
@@ -351,6 +347,74 @@ class ManagedColumnTest {
         assertThatThrownBy(() -> column.binderForRoot(42L).bind(mock(PreparedStatement.class), 1))
                 .as("entity-rooted path cannot walk a raw primitive value; the caller is confused about which binder to use and must get a clear failure")
                 .isInstanceOfAny(IllegalArgumentException.class, ClassCastException.class);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<SequencedWidgetEntity, Object> widgetIdColumn() {
+        for (var cp : TestDescriptors.idPathsFor(SequencedWidgetEntity.class)) {
+            if ("id".equals(cp.field().columnName())) {
+                return new ManagedColumn(cp);
+            }
+        }
+        throw new IllegalStateException("widget id column missing from fixture");
+    }
+
+    @Test
+    void canGenerateValueIsFalseForColumnWithoutGenerator() {
+        var column = columnFor("title");
+
+        assertThat(column.canGenerateValue())
+                .as("a plain column has no sequence to pull from — the capability flag must say so")
+                .isFalse();
+    }
+
+    @Test
+    void canGenerateValueIsFalseForIdColumnThatIsCallerAssigned() {
+        var column = columnFor("id");
+
+        assertThat(column.canGenerateValue())
+                .as("BookEntity.id is caller-assigned (no @GeneratedValue) — isId() being true does not imply canGenerateValue()")
+                .isFalse();
+    }
+
+    @Test
+    void canGenerateValueIsTrueForIdColumnWithResolvedSequence() {
+        var column = widgetIdColumn();
+
+        assertThat(column.canGenerateValue())
+                .as("a column whose descriptor carries a SequenceDescriptor must advertise it as capable of generating a value")
+                .isTrue();
+    }
+
+    @Test
+    void isIdIsTrueForTheIdColumn() {
+        assertThat(columnFor("id").isId()).isTrue();
+    }
+
+    @Test
+    void isIdIsFalseForANonIdColumn() {
+        assertThat(columnFor("title").isId()).isFalse();
+    }
+
+    @Test
+    void createValueGenerationQueryTargetsTheConfiguredSequenceName() {
+        var column = widgetIdColumn();
+
+        var sql = column.createValueGenerationQuery().buildSql();
+
+        assertThat(sql)
+                .as("the generation query must point at the physical sequence name from @SequenceGenerator — not the generator alias")
+                .contains("widget_seq")
+                .doesNotContain("widget_seq_gen");
+    }
+
+    @Test
+    void createValueGenerationQueryOnColumnWithoutGeneratorIsRejected() {
+        var column = columnFor("title");
+
+        assertThatThrownBy(column::createValueGenerationQuery)
+                .as("asking a column with no generator for a nextval query is a caller bug — must be rejected explicitly, not through an NPE on a null SequencePersister")
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

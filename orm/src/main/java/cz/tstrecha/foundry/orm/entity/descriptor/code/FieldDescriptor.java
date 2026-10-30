@@ -22,7 +22,7 @@ public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedF
         }
 
         if(field.isAnnotationPresent(Embedded.class) || field.isAnnotationPresent(EmbeddedId.class)) {
-            return new EmbeddedFieldDescriptor(field, (EmbeddableTypeDescriptor) registry.computeIfAbsent(field.getType()));
+            return new EmbeddedFieldDescriptor(field, (EmbeddableTypeDescriptor) registry.computeTypeIfAbsent(field.getType()));
         }
 
         return null;

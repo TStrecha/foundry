@@ -37,12 +37,12 @@ void main() {
             });
 
             var newUser = new UserEntity();
-            newUser.setId(new Random().nextLong());
             newUser.setAccountType(AccountType.PERSON);
             newUser.setCompanyName("TestCompany123");
             newUser.setName(new UserName(new Titles("a", "b"), "Thomas", "Tester"));
 
             entityManager.persist(newUser);
+            System.out.println("Generated id: " + newUser.getId());
 
             var appUser = entityManager.find(UserEntity.class, 2L).orElseThrow(() -> new NoSuchElementException("User not found"));
             System.out.println(appUser.getId() + ": " + appUser.getAccountType() + " - " + appUser.getCompanyName());

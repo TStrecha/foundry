@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PersistenceContextTest {
 
     private EntityPersister<BookEntity> bookPersister() throws Exception {
-        return new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(BookEntity.class)));
+        return new EntityPersister<>(TestDescriptors.managedTypeFor(BookEntity.class));
     }
 
     private BookEntity book(long id) {
@@ -109,7 +109,7 @@ class PersistenceContextTest {
     void sameKeyValueAcrossTypesIsIsolated() throws Exception {
         var ctx = new PersistenceContext();
         var bookPersister = bookPersister();
-        var personPersister = new EntityPersister<>(new ManagedType<>(TestDescriptors.descriptorFor(PersonEntity.class)));
+        var personPersister = new EntityPersister<>(TestDescriptors.managedTypeFor(PersonEntity.class));
 
         var b = book(1L);
         var p = new PersonEntity();

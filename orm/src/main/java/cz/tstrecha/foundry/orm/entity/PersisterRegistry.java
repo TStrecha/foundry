@@ -19,7 +19,7 @@ public class PersisterRegistry {
 
         for (var descriptor : descriptorRegistry.getTypes().values()) {
             if(descriptor instanceof EntityDescriptor<?> entityDescriptor) {
-                var managedType = new ManagedType<>(entityDescriptor);
+                var managedType = new ManagedType<>(entityDescriptor, descriptorRegistry);
                 var persister = new EntityPersister<>(managedType);
                 persisters.put(descriptor.type(), persister);
             }

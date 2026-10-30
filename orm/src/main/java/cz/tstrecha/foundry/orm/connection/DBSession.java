@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.connection;
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
 import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
 import cz.tstrecha.foundry.orm.operation.sql.SelectSql;
+import cz.tstrecha.foundry.orm.operation.sql.SequenceNextValueQuery;
 import cz.tstrecha.foundry.orm.operation.sql.UpdateSql;
 import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
@@ -55,6 +56,16 @@ public class DBSession implements Closeable {
             var mappingFunction = mapperBuilder.buildMapper(columnLabels);
 
             return operationResult.mapToObject(mappingFunction);
+        }
+    }
+
+    @SneakyThrows
+    public Long selectNextValueFromSequence(SequenceNextValueQuery sql) {
+        requireNotNullArgument(sql, "sql");
+
+        try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            operationResult.getResultSet().next();
+            return operationResult.getResultSet().getLong(1);
         }
     }
 
