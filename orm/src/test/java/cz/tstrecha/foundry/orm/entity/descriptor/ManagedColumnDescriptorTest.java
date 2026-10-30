@@ -44,19 +44,19 @@ class ManagedColumnDescriptorTest {
     }
 
     @Test
-    void dbColumnDescriptorForStringColumnExposesVarcharSqlType() {
+    void dbColumnDescriptorForStringColumnExposesVarcharSqlsqlType() {
         var mcd = columnPathFor(BookEntity.class, "title");
 
-        assertThat(mcd.column().type())
+        assertThat(mcd.column().sqlType())
                 .as("a String leaf column maps to SQL VARCHAR — needed by DDL generation and JDBC binding")
                 .isEqualTo(JDBCType.VARCHAR);
     }
 
     @Test
-    void dbColumnDescriptorForLongColumnExposesBigintSqlType() {
+    void dbColumnDescriptorForLongColumnExposesBigintSqlsqlType() {
         var mcd = columnPathFor(BookEntity.class, "page_count");
 
-        assertThat(mcd.column().type())
+        assertThat(mcd.column().sqlType())
                 .as("a Long leaf column maps to SQL BIGINT")
                 .isEqualTo(JDBCType.BIGINT);
     }
@@ -69,7 +69,7 @@ class ManagedColumnDescriptorTest {
                 .as("every leaf column — including those flattened out of an embeddable — must carry its db-side descriptor")
                 .isNotNull();
         assertThat(mcd.column().name()).isEqualTo("first_name");
-        assertThat(mcd.column().type()).isEqualTo(JDBCType.VARCHAR);
+        assertThat(mcd.column().sqlType()).isEqualTo(JDBCType.VARCHAR);
     }
 
     @Test
@@ -80,7 +80,7 @@ class ManagedColumnDescriptorTest {
                 .as("nested-embeddable leaf columns are rendered into SQL just like top-level ones — their db descriptor must be populated too")
                 .isNotNull();
         assertThat(mcd.column().name()).isEqualTo("title_before");
-        assertThat(mcd.column().type()).isEqualTo(JDBCType.VARCHAR);
+        assertThat(mcd.column().sqlType()).isEqualTo(JDBCType.VARCHAR);
     }
 
     @Test
@@ -91,7 +91,7 @@ class ManagedColumnDescriptorTest {
                 .as("the id path drives find/delete WHERE clauses — its db descriptor must be populated, not null")
                 .isNotNull();
         assertThat(mcd.column().name()).isEqualTo("id");
-        assertThat(mcd.column().type()).isEqualTo(JDBCType.BIGINT);
+        assertThat(mcd.column().sqlType()).isEqualTo(JDBCType.BIGINT);
     }
 
     @Test

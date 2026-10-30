@@ -1,9 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class IntegerHandler implements TypeHandler<Integer> {
 
@@ -18,7 +15,7 @@ public class IntegerHandler implements TypeHandler<Integer> {
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.INTEGER.getVendorTypeNumber());
+    public SQLType getSqlType() {
+        return JDBCType.INTEGER;
     }
 }

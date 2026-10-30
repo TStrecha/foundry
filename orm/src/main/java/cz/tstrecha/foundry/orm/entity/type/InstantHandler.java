@@ -1,10 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.Instant;
 
 public class InstantHandler implements TypeHandler<Instant> {
@@ -29,7 +25,7 @@ public class InstantHandler implements TypeHandler<Instant> {
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.TIMESTAMP.getVendorTypeNumber());
+    public SQLType getSqlType() {
+        return JDBCType.TIMESTAMP;
     }
 }

@@ -5,6 +5,7 @@ import cz.tstrecha.foundry.orm.entity.descriptor.db.TableDescriptor;
 import cz.tstrecha.foundry.orm.util.ReflectionUtils;
 import jakarta.persistence.Entity;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,7 +14,7 @@ import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgumen
 public record EntityDescriptor<E>(
         Class<E> type,
 
-        String tableName,
+        TableDescriptor tableDescriptor,
         List<FieldDescriptor> fields,
         FieldDescriptor idDescriptor
 ) implements TypeDescriptor {
@@ -26,14 +27,16 @@ public record EntityDescriptor<E>(
             throw new IllegalArgumentException("entity must be annotated with @Entity");
         }
 
-        var fields = ReflectionUtils.findAllFieldsInClass(entityType);
-
-        var tableName = entityType.getAnnotation(Entity.class).name();
-
-        var fieldDescriptors = fields.stream()
+        var fieldDescriptors = ReflectionUtils.findAllFieldsInClass(entityType).stream()
                 .map(field -> FieldDescriptor.fromField(field, registry))
                 .filter(Objects::nonNull)
                 .toList();
+
+        var columns = fieldDescriptors.stream()
+                .map(FieldDescriptor::flattenStructureToColumns)
+                .flatMap(Collection::stream)
+                .toList();
+        var tableDescriptor = new TableDescriptor(entityType, columns);
 
         var idDescriptor = fieldDescriptors.stream()
                 .filter(FieldDescriptor::isId)
@@ -47,6 +50,6 @@ public record EntityDescriptor<E>(
             throw new IllegalArgumentException(entityType.getName() + " has multiple id columns defined.");
         }
 
-        this(entityType, tableName, fieldDescriptors, idDescriptor.getFirst());
+        this(entityType, tableDescriptor, fieldDescriptors, idDescriptor.getFirst());
     }
 }

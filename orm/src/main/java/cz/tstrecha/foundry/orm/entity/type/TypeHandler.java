@@ -3,12 +3,13 @@ package cz.tstrecha.foundry.orm.entity.type;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLType;
 
 public interface TypeHandler<T> {
 
     T readValue(ResultSet resultSet, int index) throws SQLException;
     void writeValue(PreparedStatement statement, int index, T value) throws SQLException;
-    void writeNull(PreparedStatement statement, int index) throws SQLException;
+    SQLType getSqlType();
 
     default T read(ResultSet resultSet, int index) throws SQLException {
         var value = readValue(resultSet, index);
@@ -28,4 +29,7 @@ public interface TypeHandler<T> {
         }
     }
 
+    default void writeNull(PreparedStatement statement, int index) throws SQLException {
+        statement.setNull(index, getSqlType().getVendorTypeNumber());
+    }
 }

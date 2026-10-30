@@ -15,7 +15,7 @@ public class StringHandler implements TypeHandler<String> {
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setString(index, null);
+    public SQLType getSqlType() {
+        return JDBCType.VARCHAR;
     }
 }

@@ -33,7 +33,7 @@ public class ManagedType<T> {
         requireNotNullArgument(entityDescriptor, "entityDescriptor");
 
         this.type = entityDescriptor.type();
-        this.tableName = entityDescriptor.tableName();
+        this.tableName = entityDescriptor.tableDescriptor().tableName();
         this.entityCreator = new ManagedTypeCreator<>(type);
 
         for(var columnPath : PathFinder.buildColumnPaths(entityDescriptor)) {

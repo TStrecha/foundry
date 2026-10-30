@@ -12,7 +12,7 @@ public class PathFinder {
 
     public static List<ManagedColumnDescriptor<?>> buildColumnPaths(EntityDescriptor<?> entityDescriptor) {
         requireNotNullArgument(entityDescriptor, "entityDescriptor");
-        return walkFields(new FieldPath(), entityDescriptor.fields());
+        return walkFields(entityDescriptor, new FieldPath(), entityDescriptor.fields());
     }
 
     public static List<ManagedColumnDescriptor<?>> buildIdPaths(EntityDescriptor<?> entityDescriptor) {
@@ -21,31 +21,35 @@ public class PathFinder {
         if(entityDescriptor.idDescriptor() instanceof ColumnFieldDescriptor column) {
             var pathDescriptor = new ColumnPathDescriptor<>(column, new FieldPath(), true);
 
-            return List.of(new ManagedColumnDescriptor<>(null, column, pathDescriptor));
+            return List.of(new ManagedColumnDescriptor<>(entityDescriptor, column, pathDescriptor));
         }
         if(entityDescriptor.idDescriptor() instanceof EmbeddedFieldDescriptor embedded) {
-            return walkFields(new FieldPath(), embedded.embeddableTypeDescriptor().fields());
+            return walkFields(entityDescriptor, new FieldPath(), embedded.embeddableTypeDescriptor().fields());
         }
 
         throw new IllegalArgumentException("Unsupported entity descriptor type: " + entityDescriptor.idDescriptor().getClass().getName());
     }
 
     @SneakyThrows
-    private static List<ManagedColumnDescriptor<?>> walkFields(FieldPath path, List<FieldDescriptor> fields) {
+    private static List<ManagedColumnDescriptor<?>> walkFields(EntityDescriptor<?> entityDescriptor,
+                                                               FieldPath path,
+                                                               List<FieldDescriptor> fields) {
         return fields.stream()
-                .map(field -> walkField(path, field))
+                .map(field -> walkField(entityDescriptor, path, field))
                 .flatMap(Collection::stream).toList();
     }
 
     @SneakyThrows
-    private static List<ManagedColumnDescriptor<?>> walkField(FieldPath path, FieldDescriptor field) {
+    private static List<ManagedColumnDescriptor<?>> walkField(EntityDescriptor<?> entityDescriptor,
+                                                              FieldPath path,
+                                                              FieldDescriptor field) {
         if (field instanceof ColumnFieldDescriptor column) {
             var pathDescriptor = new ColumnPathDescriptor<>(column, path, false);
 
-            return List.of(new  ManagedColumnDescriptor<>(null, column, pathDescriptor));
+            return List.of(new ManagedColumnDescriptor<>(entityDescriptor, column, pathDescriptor));
         } else if (field instanceof EmbeddedFieldDescriptor embedded) {
             var subPath = path.appendNew(embedded.field());
-            return walkFields(subPath, embedded.embeddableTypeDescriptor().fields());
+            return walkFields(entityDescriptor, subPath, embedded.embeddableTypeDescriptor().fields());
         }
 
         throw new IllegalArgumentException("Unsupported field type: " + field);

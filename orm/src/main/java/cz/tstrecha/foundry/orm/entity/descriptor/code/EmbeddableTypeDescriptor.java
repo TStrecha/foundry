@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity.descriptor.code;
 import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
 import cz.tstrecha.foundry.orm.util.ReflectionUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,6 +19,13 @@ public record EmbeddableTypeDescriptor(
                 .toList();
 
         this(type, fields);
+    }
+
+    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
+        return fields.stream()
+                .map(FieldDescriptor::flattenStructureToColumns)
+                .flatMap(Collection::stream)
+                .toList();
     }
 
 }

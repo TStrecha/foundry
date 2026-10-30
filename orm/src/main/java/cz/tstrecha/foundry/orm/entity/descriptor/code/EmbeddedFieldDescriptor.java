@@ -3,6 +3,7 @@ package cz.tstrecha.foundry.orm.entity.descriptor.code;
 import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 public record EmbeddedFieldDescriptor(
         Field field,
@@ -17,5 +18,10 @@ public record EmbeddedFieldDescriptor(
         field.setAccessible(true);
 
         this(field, field.getType(), embeddableTypeDescriptor, id);
+    }
+
+    @Override
+    public List<ColumnFieldDescriptor> flattenStructureToColumns() {
+        return embeddableTypeDescriptor.flattenStructureToColumns();
     }
 }

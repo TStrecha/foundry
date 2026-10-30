@@ -23,7 +23,7 @@ public class LocalDateHandler implements TypeHandler<LocalDate> {
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.DATE.getVendorTypeNumber());
+    public SQLType getSqlType() {
+        return JDBCType.DATE;
     }
 }

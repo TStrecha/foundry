@@ -1,25 +1,19 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
 import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
-import cz.tstrecha.foundry.orm.entity.descriptor.FieldPath;
 import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
-import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotEmptyArgument;
 
 @Getter
 @ToString
@@ -40,16 +34,8 @@ public class ManagedColumn<E, F> {
         this.columnPathDescriptor = managedColumnDescriptor.entityPath();
         this.columnLabel = fieldDescriptor.columnName();
 
-        EnumType enumType = EnumType.ORDINAL;
-
-        if(columnPathDescriptor.type().isEnum()) {
-            enumType = Optional.ofNullable(fieldDescriptor.field().getAnnotation(Enumerated.class))
-                    .map(Enumerated::value)
-                    .orElse(enumType);
-        }
-
         this.fieldType = columnPathDescriptor.type();
-        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(columnPathDescriptor.type(), enumType);
+        this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(fieldDescriptor.type(), fieldDescriptor.enumType());
     }
 
     public ParameterBinder binderForEntity(E entity) {

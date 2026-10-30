@@ -6,12 +6,15 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedFieldDescriptor {
 
     Class<?> type();
     boolean isId();
     Field field();
+
+    List<ColumnFieldDescriptor> flattenStructureToColumns();
 
     static FieldDescriptor fromField(Field field, DescriptorRegistry registry) {
         if(field.isAnnotationPresent(Column.class)) {

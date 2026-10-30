@@ -1,9 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class BooleanHandler implements TypeHandler<Boolean> {
 
@@ -18,7 +15,7 @@ public class BooleanHandler implements TypeHandler<Boolean> {
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.BOOLEAN.getVendorTypeNumber());
+    public SQLType getSqlType() {
+        return JDBCType.BOOLEAN;
     }
 }

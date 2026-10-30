@@ -1,9 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
-import java.sql.JDBCType;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -32,7 +29,7 @@ public class EnumOrdinalHandler<T extends Enum<T>> implements TypeHandler<Enum<T
     }
 
     @Override
-    public void writeNull(PreparedStatement statement, int index) throws SQLException {
-        statement.setNull(index, JDBCType.INTEGER.getVendorTypeNumber());
+    public SQLType getSqlType() {
+        return JDBCType.INTEGER;
     }
 }

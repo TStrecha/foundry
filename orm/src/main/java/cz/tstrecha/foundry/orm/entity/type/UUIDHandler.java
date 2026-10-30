@@ -1,8 +1,10 @@
 package cz.tstrecha.foundry.orm.entity.type;
 
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.util.UUID;
 
 public class UUIDHandler implements TypeHandler<UUID> {
@@ -20,5 +22,10 @@ public class UUIDHandler implements TypeHandler<UUID> {
     @Override
     public void writeNull(PreparedStatement statement, int index) throws SQLException {
         statement.setObject(index, null);
+    }
+
+    @Override
+    public SQLType getSqlType() {
+        return JDBCType.JAVA_OBJECT;
     }
 }
