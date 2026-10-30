@@ -105,8 +105,8 @@ public class EntityPersister<T> {
                 .filter(ManagedColumn::canGenerateValue)
                 .filter(idColumn -> idColumn.getFieldValue(entity) == null)
                 .forEach(managedColumn -> {
-                    var sql = managedColumn.createValueGenerationQuery();
-                    var result = session.selectNextValueFromSequence(sql);
+                    var valueProvider = managedColumn.createValueProvider();
+                    var result = valueProvider.apply(session);
 
                     managedColumn.setFieldValue(entity, result);
                 });

@@ -1,19 +1,20 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
+import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
+import cz.tstrecha.foundry.orm.entity.persister.generator.ValueGenerator;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandlerResolver;
-import cz.tstrecha.foundry.orm.operation.sql.SequenceNextValueQuery;
 import lombok.Getter;
 import lombok.ToString;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Optional;
+import java.util.function.Function;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -28,7 +29,7 @@ public class ManagedColumn<E, F> {
     private final ColumnPathDescriptor<F> columnPathDescriptor;
     private final TypeHandler<F> typeHandler;
 
-    private final SequencePersister sequencePersister;
+    private final ValueGenerator<?> valueGenerator;
 
     public ManagedColumn(ManagedColumnDescriptor<F> managedColumnDescriptor) {
         requireNotNullArgument(managedColumnDescriptor, "managedColumnDescriptor");
@@ -36,7 +37,8 @@ public class ManagedColumn<E, F> {
         this.columnDescriptor = managedColumnDescriptor.column();
         this.fieldDescriptor = managedColumnDescriptor.field();
         this.columnPathDescriptor = managedColumnDescriptor.entityPath();
-        this.sequencePersister = Optional.ofNullable(managedColumnDescriptor.sequenceDescriptor()).map(SequencePersister::new).orElse(null);
+        this.valueGenerator = ValueGenerator.fromGeneratorDescriptor(
+                managedColumnDescriptor.field().generatorDescriptor(), managedColumnDescriptor.sequenceDescriptor());
         this.columnLabel = fieldDescriptor.columnName();
 
         this.fieldType = columnPathDescriptor.type();
@@ -80,12 +82,12 @@ public class ManagedColumn<E, F> {
         columnPathDescriptor.writeValueToRoot(entity, value);
     }
 
-    public SequenceNextValueQuery createValueGenerationQuery() {
+    public Function<DBSession, ?> createValueProvider() {
         if(!canGenerateValue()) {
             throw new IllegalStateException("Can't generate value for column " + columnLabel);
         }
 
-        return sequencePersister.createSequenceQuery();
+        return valueGenerator.createValueProvider();
     }
 
     public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
@@ -95,7 +97,7 @@ public class ManagedColumn<E, F> {
     }
 
     public boolean canGenerateValue() {
-        return sequencePersister != null;
+        return valueGenerator != null;
     }
 
     public boolean isId() {

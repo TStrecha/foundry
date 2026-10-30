@@ -1,5 +1,6 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
+import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
@@ -10,17 +11,22 @@ import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.generated.SequencedWidgetEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
+import cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity;
+import cz.tstrecha.foundry.orm.operation.sql.SequenceNextValueQuery;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ManagedColumnTest {
@@ -397,24 +403,67 @@ class ManagedColumnTest {
     }
 
     @Test
-    void createValueGenerationQueryTargetsTheConfiguredSequenceName() {
+    void createValueProviderTargetsTheConfiguredSequenceName() {
         var column = widgetIdColumn();
+        var session = mock(DBSession.class);
 
-        var sql = column.createValueGenerationQuery().buildSql();
+        column.createValueProvider().apply(session);
 
-        assertThat(sql)
+        var captor = ArgumentCaptor.forClass(SequenceNextValueQuery.class);
+        verify(session).selectNextValueFromSequence(captor.capture());
+        assertThat(captor.getValue().buildSql())
                 .as("the generation query must point at the physical sequence name from @SequenceGenerator — not the generator alias")
                 .contains("widget_seq")
                 .doesNotContain("widget_seq_gen");
     }
 
     @Test
-    void createValueGenerationQueryOnColumnWithoutGeneratorIsRejected() {
+    void createValueProviderOnColumnWithoutGeneratorIsRejected() {
         var column = columnFor("title");
 
-        assertThatThrownBy(column::createValueGenerationQuery)
+        assertThatThrownBy(column::createValueProvider)
                 .as("asking a column with no generator for a nextval query is a caller bug — must be rejected explicitly, not through an NPE on a null SequencePersister")
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<UuidWidgetEntity, Object> uuidIdColumn() {
+        return new ManagedColumn(TestDescriptors.idPathsFor(UuidWidgetEntity.class).get(0));
+    }
+
+    @Test
+    void canGenerateValueIsTrueForUuidIdColumn() {
+        var column = uuidIdColumn();
+
+        assertThat(column.canGenerateValue())
+                .as("@GeneratedValue(strategy = UUID) must advertise generation capability — otherwise the persist pipeline would never ask for a value")
+                .isTrue();
+    }
+
+    @Test
+    void createValueProviderForUuidColumnReturnsUuidWithoutTouchingTheSession() {
+        var column = uuidIdColumn();
+        var session = mock(DBSession.class);
+
+        var value = column.createValueProvider().apply(session);
+
+        assertThat(value)
+                .as("the UUID strategy must hand the caller a usable id — never null, and typed as UUID so entity.setId(value) does not need runtime coercion")
+                .isInstanceOf(UUID.class);
+        verifyNoInteractions(session);
+    }
+
+    @Test
+    void twoCallsToUuidColumnValueProviderYieldDistinctUuids() {
+        var column = uuidIdColumn();
+        var session = mock(DBSession.class);
+
+        var first = column.createValueProvider().apply(session);
+        var second = column.createValueProvider().apply(session);
+
+        assertThat(first)
+                .as("calling the same ManagedColumn twice must still hand out two distinct ids — otherwise two persists of entities with null id would collide on the primary key")
+                .isNotEqualTo(second);
     }
 
     @Test

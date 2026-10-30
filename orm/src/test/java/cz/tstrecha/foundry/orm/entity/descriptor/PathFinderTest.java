@@ -6,6 +6,7 @@ import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.generated.SequencedWidgetEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.pathfinderunknowngen.UnknownGeneratorEntity;
+import cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -191,6 +192,36 @@ class PathFinderTest {
         assertThatThrownBy(() -> TestDescriptors.idPathsFor(UnknownGeneratorEntity.class))
                 .as("unknown-generator contract must apply regardless of which walk discovered the column — id paths carry the same risk")
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void columnWithUuidGeneratedValueCarriesNoSequenceDescriptor() {
+        var idPath = TestDescriptors.columnPathsFor(UuidWidgetEntity.class).stream()
+                .filter(p -> "id".equals(p.field().columnName()))
+                .findFirst().orElseThrow();
+
+        assertThat(idPath.sequenceDescriptor())
+                .as("UUID is a client-side strategy — no sequence to resolve, so the resolver must early-exit on strategy != SEQUENCE instead of hunting for a nonexistent entry")
+                .isNull();
+    }
+
+    @Test
+    void scalarIdWithUuidStrategyCarriesNoSequenceDescriptorInIdPath() {
+        var paths = TestDescriptors.idPathsFor(UuidWidgetEntity.class);
+
+        assertThat(paths).hasSize(1);
+        assertThat(paths.get(0).sequenceDescriptor())
+                .as("the id path must mirror the column path — UUID strategy leaves it empty on both views, so runtime generator wiring is consistent")
+                .isNull();
+    }
+
+    @Test
+    void uuidGeneratedValueDoesNotRequireAnyRegisteredSequence() {
+        var paths = TestDescriptors.columnPathsFor(UuidWidgetEntity.class);
+
+        assertThat(paths)
+                .as("a UUID @GeneratedValue has no @SequenceGenerator anywhere in sight — descriptor build must succeed with an empty sequences map, not fail looking for one")
+                .isNotEmpty();
     }
 
     @Test

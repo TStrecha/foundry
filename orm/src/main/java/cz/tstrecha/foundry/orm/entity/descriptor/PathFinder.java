@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.descriptor;
 
 import cz.tstrecha.foundry.orm.entity.descriptor.code.*;
 import cz.tstrecha.foundry.orm.entity.descriptor.db.SequenceDescriptor;
+import jakarta.persistence.GenerationType;
 import lombok.SneakyThrows;
 
 import java.util.Collection;
@@ -64,7 +65,7 @@ public class PathFinder {
 
     private static SequenceDescriptor getSequenceDescriptorByGeneratorDescriptor(GeneratorDescriptor generatorDescriptor,
                                                                                  DescriptorRegistry descriptorRegistry) {
-        if(generatorDescriptor == null || generatorDescriptor.name() == null) {
+        if(generatorDescriptor == null || generatorDescriptor.name() == null || generatorDescriptor.strategy() != GenerationType.SEQUENCE) {
             return null;
         }
 
