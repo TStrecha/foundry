@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.type;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -23,7 +24,7 @@ class StringHandlerTest {
     void writeAllowsNull() throws Exception {
         var stmt = mock(PreparedStatement.class);
         new StringHandler().write(stmt, 2, null);
-        verify(stmt).setString(2, null);
+        verify(stmt).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
     }
 
     @Test

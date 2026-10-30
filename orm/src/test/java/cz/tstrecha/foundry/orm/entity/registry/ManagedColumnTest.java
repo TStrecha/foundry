@@ -12,6 +12,7 @@ import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import org.junit.jupiter.api.Test;
 
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
@@ -329,8 +330,7 @@ class ManagedColumnTest {
 
         column.binderForRoot(user).bind(stmt, 1);
 
-        verify(stmt)
-                .setString(1, null);
+        verify(stmt).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
     }
 
     @Test
