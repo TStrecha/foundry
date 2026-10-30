@@ -15,7 +15,7 @@ class PathFinderTest {
     void buildColumnPathsExposesOnePathPerLeafColumnForScalarEntity() {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(BookEntity.class));
 
-        assertThat(paths).extracting(cp -> cp.fieldDescriptor().columnName())
+        assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("id", "title", "author", "genre", "page_count");
     }
 
@@ -24,7 +24,7 @@ class PathFinderTest {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(BookEntity.class));
 
         assertThat(paths).allSatisfy(cp ->
-                assertThat(cp.fieldPath().nodes())
+                assertThat(cp.entityPath().fieldPath().nodes())
                         .as("top-level @Column fields produce a path with no intermediate nodes")
                         .isEmpty());
     }
@@ -33,7 +33,7 @@ class PathFinderTest {
     void buildColumnPathsFlattensEmbeddedChildren() {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
 
-        assertThat(paths).extracting(cp -> cp.fieldDescriptor().columnName())
+        assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("id", "company_name", "first_name", "last_name", "title_before", "title_after");
     }
 
@@ -42,13 +42,13 @@ class PathFinderTest {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
 
         var firstName = paths.stream()
-                .filter(p -> "first_name".equals(p.fieldDescriptor().columnName()))
+                .filter(p -> "first_name".equals(p.field().columnName()))
                 .findFirst().orElseThrow();
 
-        assertThat(firstName.fieldPath().nodes())
+        assertThat(firstName.entityPath().fieldPath().nodes())
                 .as("first_name is reached via UserFixtureEntity.name — exactly one intermediate node")
                 .hasSize(1);
-        assertThat(firstName.fieldPath().nodes().get(0).field().getName()).isEqualTo("name");
+        assertThat(firstName.entityPath().fieldPath().nodes().get(0).field().getName()).isEqualTo("name");
     }
 
     @Test
@@ -56,10 +56,10 @@ class PathFinderTest {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
 
         var titleBefore = paths.stream()
-                .filter(p -> "title_before".equals(p.fieldDescriptor().columnName()))
+                .filter(p -> "title_before".equals(p.field().columnName()))
                 .findFirst().orElseThrow();
 
-        assertThat(titleBefore.fieldPath().nodes())
+        assertThat(titleBefore.entityPath().fieldPath().nodes())
                 .extracting(n -> n.field().getName())
                 .as("title_before is reached via name -> titles")
                 .containsExactly("name", "titles");
@@ -69,7 +69,7 @@ class PathFinderTest {
     void allEntityRootedPathsAreMarkedAsNonRootValue() {
         var paths = PathFinder.buildColumnPaths(TestDescriptors.descriptorFor(UserFixtureEntity.class));
 
-        assertThat(paths).allSatisfy(cp -> assertThat(cp.rootValue())
+        assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().rootValue())
                 .as("paths produced by buildColumnPaths are always entity-rooted — root is never the value itself")
                 .isFalse());
     }
@@ -79,18 +79,18 @@ class PathFinderTest {
         var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(BookEntity.class));
 
         assertThat(paths).hasSize(1);
-        assertThat(paths.get(0).rootValue())
+        assertThat(paths.get(0).entityPath().rootValue())
                 .as("a scalar @Id value IS the column value — nothing to walk into")
                 .isTrue();
-        assertThat(paths.get(0).fieldPath().nodes()).isEmpty();
-        assertThat(paths.get(0).fieldDescriptor().columnName()).isEqualTo("id");
+        assertThat(paths.get(0).entityPath().fieldPath().nodes()).isEmpty();
+        assertThat(paths.get(0).field().columnName()).isEqualTo("id");
     }
 
     @Test
     void buildIdPathsForEmbeddedIdReturnsPathPerKeyColumn() {
         var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
 
-        assertThat(paths).extracting(cp -> cp.fieldDescriptor().columnName())
+        assertThat(paths).extracting(cp -> cp.field().columnName())
                 .containsExactlyInAnyOrder("part_a", "part_b");
     }
 
@@ -98,7 +98,7 @@ class PathFinderTest {
     void embeddedIdPathsHaveEmptyFieldPathBecauseRootIsTheKeyInstance() {
         var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
 
-        assertThat(paths).allSatisfy(cp -> assertThat(cp.fieldPath().nodes())
+        assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().fieldPath().nodes())
                 .as("for an embedded id, root is already the key instance — no intermediate traversal needed")
                 .isEmpty());
     }
@@ -107,7 +107,7 @@ class PathFinderTest {
     void embeddedIdPathsAreNotMarkedAsRootValue() {
         var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
 
-        assertThat(paths).allSatisfy(cp -> assertThat(cp.rootValue())
+        assertThat(paths).allSatisfy(cp -> assertThat(cp.entityPath().rootValue())
                 .as("embedded id columns require one leaf field access from the key instance — root is not the value")
                 .isFalse());
     }
@@ -116,7 +116,7 @@ class PathFinderTest {
     void buildIdPathsForScalarIdLeafFieldPointsToTheIdField() {
         var paths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(BookEntity.class));
 
-        assertThat(paths.get(0).fieldDescriptor().field().getName()).isEqualTo("id");
+        assertThat(paths.get(0).field().field().getName()).isEqualTo("id");
     }
 
     @Test
@@ -139,14 +139,14 @@ class PathFinderTest {
         var idPaths = PathFinder.buildIdPaths(TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class));
 
         var partAColumnPath = columnPaths.stream()
-                .filter(p -> "part_a".equals(p.fieldDescriptor().columnName()))
+                .filter(p -> "part_a".equals(p.field().columnName()))
                 .findFirst().orElseThrow();
         var partAIdPath = idPaths.stream()
-                .filter(p -> "part_a".equals(p.fieldDescriptor().columnName()))
+                .filter(p -> "part_a".equals(p.field().columnName()))
                 .findFirst().orElseThrow();
 
-        assertThat(partAColumnPath.fieldDescriptor().field())
+        assertThat(partAColumnPath.field().field())
                 .as("both views describe the same leaf field, only the root differs")
-                .isEqualTo(partAIdPath.fieldDescriptor().field());
+                .isEqualTo(partAIdPath.field().field());
     }
 }

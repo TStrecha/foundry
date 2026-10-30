@@ -13,7 +13,7 @@ public record ColumnPathDescriptor<T>(
 ) {
 
     public ColumnPathDescriptor(ColumnFieldDescriptor fieldDescriptor, FieldPath fieldPath, boolean rootValue) {
-        this((Class<T>) fieldDescriptor.getFieldType(), fieldDescriptor, fieldPath, rootValue);
+        this((Class<T>) fieldDescriptor.type(), fieldDescriptor, fieldPath, rootValue);
     }
 
     @SneakyThrows

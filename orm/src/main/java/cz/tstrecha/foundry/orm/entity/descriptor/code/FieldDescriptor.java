@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 
 public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedFieldDescriptor {
 
-    Class<?> getFieldType();
+    Class<?> type();
     boolean isId();
     Field field();
 

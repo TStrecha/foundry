@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
 import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
+import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.FieldDescriptor;
@@ -37,7 +38,7 @@ public class ManagedType<T> {
 
         for(var columnPath : PathFinder.buildColumnPaths(entityDescriptor)) {
             var managedColumn = createManagedColumnFromPath(columnPath);
-            columns.put(columnPath.fieldDescriptor().columnName(), managedColumn);
+            columns.put(managedColumn.getColumnLabel(), managedColumn);
         }
 
         for(var columnPath : PathFinder.buildIdPaths(entityDescriptor)) {
@@ -48,8 +49,8 @@ public class ManagedType<T> {
         this.idFieldDescriptor = entityDescriptor.idDescriptor();
     }
 
-    private <F> ManagedColumn<T, F> createManagedColumnFromPath(ColumnPathDescriptor<F> pathDescriptor) {
-        return new ManagedColumn<>(pathDescriptor.fieldDescriptor(), pathDescriptor);
+    private <F> ManagedColumn<T, F> createManagedColumnFromPath(ManagedColumnDescriptor<F> managedColumnDescriptor) {
+        return new ManagedColumn<>(managedColumnDescriptor);
     }
 
     public RowMapper<T> createRowMapper(List<String> columnLabels) {

@@ -2,6 +2,7 @@ package cz.tstrecha.foundry.orm.entity.persister;
 
 import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.FieldPath;
+import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
@@ -26,16 +27,17 @@ public class ManagedColumn<E, F> {
 
     private final String columnLabel;
     private final Class<F> fieldType;
+    private final ColumnDescriptor columnDescriptor;
     private final ColumnFieldDescriptor fieldDescriptor;
     private final ColumnPathDescriptor<F> columnPathDescriptor;
     private final TypeHandler<F> typeHandler;
 
-    public ManagedColumn(ColumnFieldDescriptor fieldDescriptor, ColumnPathDescriptor<F> columnPathDescriptor) {
-        requireNotNullArgument(fieldDescriptor, "fieldDescriptor");
-        requireNotNullArgument(columnPathDescriptor, "columnPathDescriptor");
+    public ManagedColumn(ManagedColumnDescriptor<F> managedColumnDescriptor) {
+        requireNotNullArgument(managedColumnDescriptor, "managedColumnDescriptor");
 
-        this.columnPathDescriptor = columnPathDescriptor;
-        this.fieldDescriptor = fieldDescriptor;
+        this.columnDescriptor = managedColumnDescriptor.column();
+        this.fieldDescriptor = managedColumnDescriptor.field();
+        this.columnPathDescriptor = managedColumnDescriptor.entityPath();
         this.columnLabel = fieldDescriptor.columnName();
 
         EnumType enumType = EnumType.ORDINAL;

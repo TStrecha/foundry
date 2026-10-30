@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.descriptor.code;
 
 import cz.tstrecha.foundry.orm.entity.descriptor.DescriptorRegistry;
+import cz.tstrecha.foundry.orm.entity.descriptor.db.TableDescriptor;
 import cz.tstrecha.foundry.orm.util.ReflectionUtils;
 import jakarta.persistence.Entity;
 
@@ -11,6 +12,7 @@ import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgumen
 
 public record EntityDescriptor<E>(
         Class<E> type,
+
         String tableName,
         List<FieldDescriptor> fields,
         FieldDescriptor idDescriptor

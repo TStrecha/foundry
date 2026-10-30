@@ -4,12 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 public record ColumnFieldDescriptor(
+        Field field,
+        Class<?> type,
+
         boolean isId,
-        String columnName,
-        Field field
+        String columnName
 ) implements FieldDescriptor {
 
     public ColumnFieldDescriptor(Field field) {
@@ -17,12 +18,7 @@ public record ColumnFieldDescriptor(
         var columnName = field.getAnnotation(Column.class).name();
         field.setAccessible(true);
 
-        this(id, columnName, field);
-    }
-
-    @Override
-    public Class<?> getFieldType() {
-        return field.getType();
+        this(field, field.getType(), id, columnName);
     }
 
 }

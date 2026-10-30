@@ -1,6 +1,5 @@
 package cz.tstrecha.foundry.orm.entity.registry;
 
-import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
@@ -29,18 +28,8 @@ class ManagedColumnTest {
     private ManagedColumn<BookEntity, Object> columnFor(String columnName) {
         var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
         for (var cp : PathFinder.buildColumnPaths(descriptor)) {
-            if (cp.fieldDescriptor().columnName().equals(columnName)) {
-                return new ManagedColumn(cp.fieldDescriptor(), cp);
-            }
-        }
-        throw new IllegalArgumentException("No such column: " + columnName);
-    }
-
-    private ColumnPathDescriptor<?> pathFor(String columnName) {
-        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
-        for (var cp : PathFinder.buildColumnPaths(descriptor)) {
-            if (cp.fieldDescriptor().columnName().equals(columnName)) {
-                return cp;
+            if (cp.field().columnName().equals(columnName)) {
+                return new ManagedColumn(cp);
             }
         }
         throw new IllegalArgumentException("No such column: " + columnName);
@@ -132,16 +121,9 @@ class ManagedColumnTest {
     }
 
     @Test
-    void nullFieldDescriptorInConstructorIsRejected() {
-        var somePath = pathFor("title");
-        assertThatThrownBy(() -> new ManagedColumn<>(null, somePath))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void nullPathDescriptorInConstructorIsRejected() {
-        var someFieldDescriptor = pathFor("title").fieldDescriptor();
-        assertThatThrownBy(() -> new ManagedColumn<>(someFieldDescriptor, null))
+    void nullManagedColumnDescriptorInConstructorIsRejected() {
+        assertThatThrownBy(() -> new ManagedColumn<>(null))
+                .as("a null descriptor can only be a caller bug — must be rejected explicitly, not deferred to an NPE")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -156,8 +138,8 @@ class ManagedColumnTest {
     private ManagedColumn<UserFixtureEntity, Object> userColumnFor(String columnName) {
         var descriptor = TestDescriptors.descriptorFor(UserFixtureEntity.class);
         for (var cp : PathFinder.buildColumnPaths(descriptor)) {
-            if (cp.fieldDescriptor().columnName().equals(columnName)) {
-                return new ManagedColumn(cp.fieldDescriptor(), cp);
+            if (cp.field().columnName().equals(columnName)) {
+                return new ManagedColumn(cp);
             }
         }
         throw new IllegalArgumentException("No such column: " + columnName);
@@ -278,15 +260,15 @@ class ManagedColumnTest {
     private ManagedColumn<Object, Object> scalarIdColumn() {
         var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
         var idPath = PathFinder.buildIdPaths(descriptor).get(0);
-        return new ManagedColumn(idPath.fieldDescriptor(), idPath);
+        return new ManagedColumn(idPath);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private ManagedColumn<Object, Object> embeddedIdColumn(String columnName) {
         var descriptor = TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class);
         for (var cp : PathFinder.buildIdPaths(descriptor)) {
-            if (cp.fieldDescriptor().columnName().equals(columnName)) {
-                return new ManagedColumn(cp.fieldDescriptor(), cp);
+            if (cp.field().columnName().equals(columnName)) {
+                return new ManagedColumn(cp);
             }
         }
         throw new IllegalArgumentException("No such id column: " + columnName);

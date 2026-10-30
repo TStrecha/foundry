@@ -5,20 +5,17 @@ import jakarta.persistence.EmbeddedId;
 import java.lang.reflect.Field;
 
 public record EmbeddedFieldDescriptor(
-        boolean isId,
         Field field,
-        EmbeddableTypeDescriptor embeddableTypeDescriptor
+        Class<?> type,
+        EmbeddableTypeDescriptor embeddableTypeDescriptor,
+
+        boolean isId
 ) implements FieldDescriptor {
 
     public EmbeddedFieldDescriptor(Field field, EmbeddableTypeDescriptor embeddableTypeDescriptor) {
         var id = field.isAnnotationPresent(EmbeddedId.class);
         field.setAccessible(true);
 
-        this(id, field, embeddableTypeDescriptor);
-    }
-
-    @Override
-    public Class<?> getFieldType() {
-        return field.getType();
+        this(field, field.getType(), embeddableTypeDescriptor, id);
     }
 }
