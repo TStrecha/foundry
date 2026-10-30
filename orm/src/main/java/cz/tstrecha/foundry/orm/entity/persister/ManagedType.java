@@ -23,7 +23,7 @@ public class ManagedType<T> {
     private final String tableName;
 
     private final ManagedTypeCreator<T> entityCreator;
-    private final Map<String, ManagedColumn<T, ?>> columns = new HashMap<>();
+    private final Map<String, ManagedColumn<T, ?>> columns = new LinkedHashMap<>();
     private final List<ManagedColumn<T, ?>> idColumns = new ArrayList<>();
 
     private final FieldDescriptor idFieldDescriptor;
@@ -99,6 +99,7 @@ public class ManagedType<T> {
 
     @SneakyThrows
     public Object extractKeyFromEntity(T entity) {
+        requireNotNullArgument(entity, "entity");
         return idFieldDescriptor.field().get(entity);
     }
 

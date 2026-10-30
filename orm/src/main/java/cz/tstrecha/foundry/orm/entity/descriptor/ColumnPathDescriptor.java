@@ -3,6 +3,8 @@ package cz.tstrecha.foundry.orm.entity.descriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import lombok.SneakyThrows;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public record ColumnPathDescriptor<T>(
         Class<T> type,
         ColumnFieldDescriptor fieldDescriptor,
@@ -16,9 +18,7 @@ public record ColumnPathDescriptor<T>(
 
     @SneakyThrows
     public T readValueFromRoot(Object root) {
-        if(root == null) {
-            return null;
-        }
+        requireNotNullArgument(root, "root");
 
         if(rootValue) {
             return (T) root;
@@ -36,6 +36,7 @@ public record ColumnPathDescriptor<T>(
 
     @SneakyThrows
     public void writeValueToRoot(Object root, Object value) {
+        requireNotNullArgument(root, "root");
         if(rootValue) {
             throw new UnsupportedOperationException("Cannot write to root");
         }

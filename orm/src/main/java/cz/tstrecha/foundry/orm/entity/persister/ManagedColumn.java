@@ -31,6 +31,9 @@ public class ManagedColumn<E, F> {
     private final TypeHandler<F> typeHandler;
 
     public ManagedColumn(ColumnFieldDescriptor fieldDescriptor, ColumnPathDescriptor<F> columnPathDescriptor) {
+        requireNotNullArgument(fieldDescriptor, "fieldDescriptor");
+        requireNotNullArgument(columnPathDescriptor, "columnPathDescriptor");
+
         this.columnPathDescriptor = columnPathDescriptor;
         this.fieldDescriptor = fieldDescriptor;
         this.columnLabel = fieldDescriptor.columnName();
@@ -57,8 +60,21 @@ public class ManagedColumn<E, F> {
     }
 
     public ParameterBinder binderForAnyValue(Object value) {
-        var typedValue = columnPathDescriptor.readValueFromRoot(value);
+        if(value == null) {
+            return (statement, index) -> typeHandler.write(statement, index, null);
+        }
+
+        if(value.getClass() != fieldType){
+            throw new ClassCastException("Value of type " + value.getClass().getName() + " is not of type " + fieldType.getName());
+        }
+
+        var typedValue = fieldType.cast(value);
         return (statement, index) -> typeHandler.write(statement, index, typedValue);
+    }
+
+    public ParameterBinder binderForRoot(Object value) {
+        var leafValue = columnPathDescriptor.readValueFromRoot(value);
+        return binderForValue(leafValue);
     }
 
     public F getFieldValue(E entity) {
@@ -67,6 +83,7 @@ public class ManagedColumn<E, F> {
     }
 
     public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
+        requireNotNullArgument(resultSet, "resultSet");
         var parsedValue = typeHandler.read(resultSet, index);
         columnPathDescriptor.writeValueToRoot(entity, parsedValue);
     }

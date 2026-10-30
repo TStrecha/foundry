@@ -120,37 +120,42 @@ class ManagedTypeTest {
 
     @Test
     void typeWithoutTableAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(NoTableEntity.class)))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(NoTableEntity.class)))
+                .as("an entity class without @Entity cannot be managed — must be rejected with a clear error, not NPE on annotation lookup")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void typeWithoutIdAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(NoIdEntity.class)))
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(NoIdEntity.class)))
+                .as("an entity without any @Id column cannot be managed and must be rejected explicitly")
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void unsupportedTypeFailsAtRegistration() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(UnsupportedTypeEntity.class)))
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(UnsupportedTypeEntity.class)))
+                .as("entity with a @Column field whose Java type has no TypeHandler must fail at registration, not at first use")
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void entityWithMultipleIdsIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(MultipleIdsEntity.class)))
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(MultipleIdsEntity.class)))
+                .as("more than one @Id on scalar columns is a composite-key setup; use @EmbeddedId instead — must be rejected explicitly, not silently take the first one")
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void idAnnotationWithoutColumnAnnotationIsRejected() {
-        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.descriptorFor(IdWithoutColumnEntity.class)))
-                .isInstanceOf(IllegalStateException.class);
+    void fieldWithIdAnnotationButNoColumnAnnotationIsRejected() {
+        assertThatThrownBy(() -> new ManagedType<>(TestDescriptors.isolatedDescriptorFor(IdWithoutColumnEntity.class)))
+                .as("@Id on a field without @Column is a programmer mistake — must be surfaced with a field-level error that names @Column, not silently skipped so the entity looks id-less")
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void inheritedAnnotatedFieldsAreDiscovered() throws Exception {
-        var mt = new ManagedType<>(TestDescriptors.descriptorFor(ChildWithInheritedColumnEntity.class));
+        var mt = new ManagedType<>(TestDescriptors.isolatedDescriptorFor(ChildWithInheritedColumnEntity.class));
         assertThat(mt.getManagedColumnLabels()).contains("id", "name");
         assertThat(mt.getIdColumns().get(0).getColumnLabel()).isEqualTo("id");
     }

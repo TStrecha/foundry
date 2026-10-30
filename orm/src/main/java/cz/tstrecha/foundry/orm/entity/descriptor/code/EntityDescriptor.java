@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import java.util.List;
 import java.util.Objects;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public record EntityDescriptor<E>(
         Class<E> type,
         String tableName,
@@ -15,6 +17,13 @@ public record EntityDescriptor<E>(
 ) implements TypeDescriptor {
 
     public EntityDescriptor(Class<E> entityType, DescriptorRegistry registry) {
+        requireNotNullArgument(entityType, "entityType");
+        requireNotNullArgument(registry, "registry");
+
+        if(!entityType.isAnnotationPresent(Entity.class)) {
+            throw new IllegalArgumentException("entity must be annotated with @Entity");
+        }
+
         var fields = ReflectionUtils.findAllFieldsInClass(entityType);
 
         var tableName = entityType.getAnnotation(Entity.class).name();
@@ -23,11 +32,19 @@ public record EntityDescriptor<E>(
                 .map(field -> FieldDescriptor.fromField(field, registry))
                 .filter(Objects::nonNull)
                 .toList();
+
         var idDescriptor = fieldDescriptors.stream()
                 .filter(FieldDescriptor::isId)
-                .findFirst()
-                .orElseThrow();
+                .toList();
 
-        this(entityType, tableName, fieldDescriptors, idDescriptor);
+        if(idDescriptor.isEmpty()) {
+            throw new IllegalArgumentException("could not find id column for entity " + entityType.getName());
+        }
+
+        if(idDescriptor.size() > 1) {
+            throw new IllegalArgumentException(entityType.getName() + " has multiple id columns defined.");
+        }
+
+        this(entityType, tableName, fieldDescriptors, idDescriptor.getFirst());
     }
 }

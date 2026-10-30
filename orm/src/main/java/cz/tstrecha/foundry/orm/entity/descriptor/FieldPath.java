@@ -6,6 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public record FieldPath(
         List<PathNode<?>> nodes
 ) {
@@ -15,6 +17,8 @@ public record FieldPath(
     }
 
     public FieldPath appendNew(Field field) throws NoSuchMethodException {
+        requireNotNullArgument(field, "field");
+
         var newPath = new FieldPath(new ArrayList<>(nodes));
         newPath.addNode(field);
 

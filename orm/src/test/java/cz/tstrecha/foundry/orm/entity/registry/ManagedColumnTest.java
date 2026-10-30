@@ -5,6 +5,8 @@ import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.persister.ManagedColumn;
 import cz.tstrecha.foundry.orm.fixtures.Genre;
 import cz.tstrecha.foundry.orm.fixtures.TestDescriptors;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixture;
+import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
@@ -270,6 +272,103 @@ class ManagedColumnTest {
         assertThat(book.getTitle())
                 .as("SQL NULL in the ResultSet must land as Java null, overwriting any existing value")
                 .isNull();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<Object, Object> scalarIdColumn() {
+        var descriptor = TestDescriptors.descriptorFor(BookEntity.class);
+        var idPath = PathFinder.buildIdPaths(descriptor).get(0);
+        return new ManagedColumn(idPath.fieldDescriptor(), idPath);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<Object, Object> embeddedIdColumn(String columnName) {
+        var descriptor = TestDescriptors.descriptorFor(CompositeKeyFixtureEntity.class);
+        for (var cp : PathFinder.buildIdPaths(descriptor)) {
+            if (cp.fieldDescriptor().columnName().equals(columnName)) {
+                return new ManagedColumn(cp.fieldDescriptor(), cp);
+            }
+        }
+        throw new IllegalArgumentException("No such id column: " + columnName);
+    }
+
+    @Test
+    void binderForRootOnTopLevelEntityPathReadsLeafValueFromEntity() throws Exception {
+        var column = columnFor("title");
+        var book = new BookEntity();
+        book.setTitle("Hyperion");
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(book).bind(stmt, 1);
+
+        verify(stmt)
+                .setString(1, "Hyperion");
+    }
+
+    @Test
+    void binderForRootOnNestedEmbeddedPathWalksThroughParentsToLeaf() throws Exception {
+        var column = userColumnFor("title_before");
+        var user = new UserFixtureEntity(1L, "Acme",
+                new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(user).bind(stmt, 4);
+
+        verify(stmt).setString(4, "Dr.");
+    }
+
+    @Test
+    void binderForRootOnRootValuePathBindsTheRootItselfAsColumnValue() throws Exception {
+        var column = scalarIdColumn();
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(42L).bind(stmt, 1);
+
+        verify(stmt)
+                .setLong(1, 42L);
+    }
+
+    @Test
+    void binderForRootOnEmbeddedIdColumnExtractsKeyColumnValueFromKeyInstance() throws Exception {
+        var column = embeddedIdColumn("part_a");
+        var key = new CompositeKeyFixture("A-value", "B-value");
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(key).bind(stmt, 1);
+
+        verify(stmt).setString(1, "A-value");
+    }
+
+    @Test
+    void binderForRootWithNullIntermediateEmbeddedBindsSqlNull() throws Exception {
+        var column = userColumnFor("first_name");
+        var user = new UserFixtureEntity(1L, "Acme", null);
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(user).bind(stmt, 1);
+
+        verify(stmt)
+                .setString(1, null);
+    }
+
+    @Test
+    void binderForRootDoesNotCastValueDirectly() throws Exception {
+        var column = scalarIdColumn();
+        var stmt = mock(PreparedStatement.class);
+
+        column.binderForRoot(99L).bind(stmt, 2);
+
+        verify(stmt)
+                .setLong(2, 99L);
+    }
+
+    @Test
+    void binderForRootOnEntityRootedColumnWithWrongRootTypeIsRejected() {
+        var column = columnFor("id");
+
+        assertThatThrownBy(() -> column.binderForRoot(42L).bind(mock(PreparedStatement.class), 1))
+                .as("entity-rooted path cannot walk a raw primitive value; the caller is confused about which binder to use and must get a clear failure")
+                .isInstanceOfAny(IllegalArgumentException.class, ClassCastException.class);
     }
 
     @Test

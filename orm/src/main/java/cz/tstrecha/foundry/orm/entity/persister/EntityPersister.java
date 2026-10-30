@@ -38,7 +38,7 @@ public class EntityPersister<T> {
         requireNotNullArgument(id, "id");
 
         var clauses = managedType.getIdColumns().stream()
-                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForAnyValue(id)))
+                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForRoot(id)))
                 .toList();
 
         return select(managedType.getManagedColumnLabels())
@@ -73,7 +73,7 @@ public class EntityPersister<T> {
                         LinkedHashMap::new));
 
         var clauses = managedType.getIdColumns().stream()
-                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForAnyValue(id)))
+                .map(idColumn -> new FilterClause(idColumn.getColumnLabel(), SqlOperator.EQUALS, idColumn.binderForRoot(id)))
                 .toList();
 
         return update(managedType.getTableName())

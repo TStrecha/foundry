@@ -6,7 +6,6 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 public sealed interface FieldDescriptor permits ColumnFieldDescriptor, EmbeddedFieldDescriptor {
 

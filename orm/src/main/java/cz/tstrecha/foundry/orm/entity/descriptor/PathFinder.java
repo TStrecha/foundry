@@ -7,13 +7,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
+
 public class PathFinder {
 
     public static List<ColumnPathDescriptor<?>> buildColumnPaths(EntityDescriptor<?> entityDescriptor) {
+        requireNotNullArgument(entityDescriptor, "entityDescriptor");
         return walkFields(new FieldPath(), entityDescriptor.fields());
     }
 
     public static List<ColumnPathDescriptor<?>> buildIdPaths(EntityDescriptor<?> entityDescriptor) {
+        requireNotNullArgument(entityDescriptor, "entityDescriptor");
+
         if(entityDescriptor.idDescriptor() instanceof ColumnFieldDescriptor column) {
             return List.of(new ColumnPathDescriptor<>(column, new FieldPath(), true));
         }
