@@ -1,12 +1,11 @@
 package cz.tstrecha.foundry.orm.fixtures.broken;
 
+import cz.tstrecha.foundry.orm.operation.sql.Sql;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -18,5 +17,5 @@ public class UnsupportedTypeEntity {
     private Long id;
 
     @Column(name = "born")
-    private LocalDate born;
+    private Sql born;
 }

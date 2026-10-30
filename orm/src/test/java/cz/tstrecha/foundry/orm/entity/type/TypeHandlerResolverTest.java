@@ -91,12 +91,14 @@ class TypeHandlerResolverTest {
 
     @Test
     void instantIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(Instant.class, null)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(Instant.class, null))
+                .isInstanceOf(InstantHandler.class);
     }
 
     @Test
     void localDateIsSupported() {
-        assertThat(TypeHandlerResolver.findHandlerForType(LocalDate.class, null)).isNotNull();
+        assertThat(TypeHandlerResolver.findHandlerForType(LocalDate.class, null))
+                .isInstanceOf(LocalDateHandler.class);
     }
 
     @Test

@@ -4,6 +4,8 @@ import jakarta.persistence.EnumType;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +48,12 @@ public class TypeHandlerResolver {
             }
             if(clazz == BigDecimal.class) {
                 return new BigDecimalHandler();
+            }
+            if(clazz == Instant.class) {
+                return new InstantHandler();
+            }
+            if(clazz == LocalDate.class) {
+                return new LocalDateHandler();
             }
             if(clazz.isEnum()) {
                 requireNotNullArgument(enumType, "enumType");
