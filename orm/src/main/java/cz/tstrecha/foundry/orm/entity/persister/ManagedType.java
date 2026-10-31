@@ -5,8 +5,10 @@ import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.PathFinder;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.EntityDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.FieldDescriptor;
+import cz.tstrecha.foundry.orm.entity.persister.generator.PostInsertValueGenerator;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.row.RowMapper;
+import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -14,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -81,18 +84,19 @@ public class ManagedType<T> {
         return instance;
     }
 
-    public List<ParameterBinder> getValueBindersForEntity(T entity) {
-        return getValueBindersForEntity(entity, columns.values());
+    public Map<String, ParameterBinder> getColumnBinders(T entity) {
+        return columns.values().stream()
+                .filter(column -> !(column.getValueGenerator() instanceof PostInsertValueGenerator<?>) || column.getFieldValue(entity) != null)
+                .collect(Collectors.toMap(
+                        ManagedColumn::getColumnLabel,
+                        managedColumn -> managedColumn.binderForEntity(entity)));
     }
 
-    public List<ParameterBinder> getValueBindersForEntity(T entity, Collection<ManagedColumn<T, ?>> columns) {
-        var values = new ArrayList<ParameterBinder>();
-        for (var managedColumn : columns) {
-            var fieldValue = managedColumn.binderForEntity(entity);
-            values.add(fieldValue);
-        }
-
-        return values;
+    public List<ManagedColumn<T, ?>> getPostInsertGeneratedColumns(T entity) {
+        return columns.values().stream()
+                .filter(column -> column.getValueGenerator() instanceof PostInsertValueGenerator<?>)
+                .filter(column -> column.getFieldValue(entity) == null)
+                .toList();
     }
 
     public List<?> createEntitySnapshot(T entity) {

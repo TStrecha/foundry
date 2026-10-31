@@ -1,6 +1,7 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
 import cz.tstrecha.foundry.orm.connection.DBSession;
+import cz.tstrecha.foundry.orm.entity.persister.generator.PreInsertValueGenerator;
 import cz.tstrecha.foundry.orm.operation.filter.FilterBuilder;
 import cz.tstrecha.foundry.orm.operation.filter.FilterClause;
 import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
@@ -12,6 +13,7 @@ import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,15 +50,19 @@ public class EntityPersister<T> {
     }
 
     @SneakyThrows
-    public InsertSql generateInsert(Object entity) {
+    public InsertStrategy<T> generateInsert(Object entity) {
         requireNotNullArgument(entity, "entity");
 
         var typedEntity = type.cast(entity);
-        var values = managedType.getValueBindersForEntity(typedEntity);
+        var columnBinders = managedType.getColumnBinders(typedEntity);
+        var postInsertGeneratedColumns = managedType.getPostInsertGeneratedColumns(typedEntity);
 
-        return insert()
-                .into(managedType.getTableName(), managedType.getManagedColumnLabels())
-                .values(values);
+        var sql = insert()
+                .into(managedType.getTableName(), columnBinders.keySet())
+                .values(new ArrayList<>(columnBinders.values()))
+                .returning(postInsertGeneratedColumns.stream().map(ManagedColumn::getColumnLabel).toList());
+
+        return new InsertStrategy<>(sql, postInsertGeneratedColumns);
     }
 
     @SneakyThrows
@@ -99,16 +105,20 @@ public class EntityPersister<T> {
         return this.managedType::createRowMapper;
     }
 
-    public void generateValues(T entity, DBSession session) {
+    public void generateValuesPreInsert(T entity, DBSession session) {
         managedType.getColumns().values().stream()
-                .filter(ManagedColumn::isId)
                 .filter(ManagedColumn::canGenerateValue)
-                .filter(idColumn -> idColumn.getFieldValue(entity) == null)
+                .filter(managedColumn -> managedColumn.getFieldValue(entity) == null)
                 .forEach(managedColumn -> {
-                    var valueProvider = managedColumn.createValueProvider();
-                    var result = valueProvider.apply(session);
+                    if(managedColumn.getValueGenerator() instanceof PreInsertValueGenerator<?> preInsertValueGenerator) {
+                        var result = preInsertValueGenerator.createValueProvider().apply(session);
 
-                    managedColumn.setFieldValue(entity, result);
+                        managedColumn.setFieldValue(entity, result);
+                    }
                 });
+    }
+
+    public record InsertStrategy<T>(InsertSql sql, List<ManagedColumn<T, ?>> postInsertGeneratedColumns) {
+
     }
 }

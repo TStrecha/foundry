@@ -1,12 +1,14 @@
 package cz.tstrecha.foundry.orm.connection;
 
 import cz.tstrecha.foundry.orm.connection.provider.ConnectionProvider;
+import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
+import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
+import cz.tstrecha.foundry.orm.operation.result.ReturningInsertOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.ReturningValueConsumer;
 import cz.tstrecha.foundry.orm.operation.sql.InsertSql;
 import cz.tstrecha.foundry.orm.operation.sql.SelectSql;
 import cz.tstrecha.foundry.orm.operation.sql.SequenceNextValueQuery;
 import cz.tstrecha.foundry.orm.operation.sql.UpdateSql;
-import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
-import cz.tstrecha.foundry.orm.entity.row.RowMapperBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -70,10 +72,12 @@ public class DBSession implements Closeable {
     }
 
     @SneakyThrows
-    public int insert(InsertSql sql) {
+    public int insert(InsertSql sql, ReturningValueConsumer consumer) {
         requireNotNullArgument(sql, "sql");
+        requireNotNullArgument(consumer, "consumer");
 
         try (var operationResult = sql.execute(connectionProvider.acquireConnection())) {
+            operationResult.fillEntity(consumer);
             return operationResult.getRowsCreated();
         }
     }

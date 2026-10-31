@@ -1,10 +1,10 @@
 package cz.tstrecha.foundry.orm.entity.persister;
 
-import cz.tstrecha.foundry.orm.connection.DBSession;
 import cz.tstrecha.foundry.orm.entity.descriptor.ColumnPathDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.ManagedColumnDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.code.ColumnFieldDescriptor;
 import cz.tstrecha.foundry.orm.entity.descriptor.db.ColumnDescriptor;
+import cz.tstrecha.foundry.orm.entity.persister.generator.PostInsertValueGenerator;
 import cz.tstrecha.foundry.orm.entity.persister.generator.ValueGenerator;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.type.TypeHandler;
@@ -14,7 +14,6 @@ import lombok.ToString;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Function;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
@@ -37,11 +36,12 @@ public class ManagedColumn<E, F> {
         this.columnDescriptor = managedColumnDescriptor.column();
         this.fieldDescriptor = managedColumnDescriptor.field();
         this.columnPathDescriptor = managedColumnDescriptor.entityPath();
+        this.columnLabel = fieldDescriptor.columnName();
+        this.fieldType = columnPathDescriptor.type();
+
         this.valueGenerator = ValueGenerator.fromGeneratorDescriptor(
                 managedColumnDescriptor.field().generatorDescriptor(), managedColumnDescriptor.sequenceDescriptor());
-        this.columnLabel = fieldDescriptor.columnName();
 
-        this.fieldType = columnPathDescriptor.type();
         this.typeHandler = (TypeHandler<F>) TypeHandlerResolver.findHandlerForType(fieldDescriptor.type(), fieldDescriptor.enumType());
     }
 
@@ -82,15 +82,7 @@ public class ManagedColumn<E, F> {
         columnPathDescriptor.writeValueToRoot(entity, value);
     }
 
-    public Function<DBSession, ?> createValueProvider() {
-        if(!canGenerateValue()) {
-            throw new IllegalStateException("Can't generate value for column " + columnLabel);
-        }
-
-        return valueGenerator.createValueProvider();
-    }
-
-    public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws IllegalAccessException, SQLException {
+    public void saturateColumnForEntity(E entity, ResultSet resultSet, int index) throws SQLException {
         requireNotNullArgument(resultSet, "resultSet");
         var parsedValue = typeHandler.read(resultSet, index);
         columnPathDescriptor.writeValueToRoot(entity, parsedValue);
@@ -102,5 +94,11 @@ public class ManagedColumn<E, F> {
 
     public boolean isId() {
         return fieldDescriptor.isId();
+    }
+
+    public void readAndConsumePostGeneratedValue(E entity, ResultSet rs, int i) throws SQLException {
+        var postInsertGenerator = (PostInsertValueGenerator<?>) getValueGenerator();
+        var value = postInsertGenerator.createValueConsumer().consume(rs, i);
+        setFieldValue(entity, value);
     }
 }

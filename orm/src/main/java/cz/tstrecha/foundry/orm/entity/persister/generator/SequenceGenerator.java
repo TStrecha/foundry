@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
 
-public class SequenceGenerator implements ValueGenerator<Long> {
+public class SequenceGenerator implements PreInsertValueGenerator<Long> {
 
     private final String sequenceName;
 

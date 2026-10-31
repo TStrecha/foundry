@@ -83,7 +83,7 @@ class DBSessionTest {
 
         var session = new DBSession(new ConnectionProvider(ds));
         var insert = new InsertSql().into("t", List.of("a")).values(List.of((s, i) -> s.setLong(i, 1L)));
-        var result = session.insert(insert);
+        var result = session.insert(insert, rs -> {});
         assertThat(result).isEqualTo(3);
     }
 
@@ -156,7 +156,7 @@ class DBSessionTest {
         var conn = mock(Connection.class);
         when(ds.getConnection()).thenReturn(conn);
         var session = new DBSession(new ConnectionProvider(ds));
-        assertThatThrownBy(() -> session.insert(null))
+        assertThatThrownBy(() -> session.insert(null, rs -> {}))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

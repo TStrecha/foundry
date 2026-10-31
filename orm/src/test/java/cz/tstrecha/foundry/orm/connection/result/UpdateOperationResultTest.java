@@ -12,22 +12,26 @@ import static org.mockito.Mockito.verify;
 class UpdateOperationResultTest {
 
     @Test
-    void exposesRowsCreated() {
-        var result = new UpdateOperationResult(mock(Statement.class), 7);
-        assertThat(result.getRowsCreated()).isEqualTo(7);
+    void exposesTheRowCountPassedAtConstruction() {
+        var result = new UpdateOperationResult(mock(Statement.class), 4);
+        assertThat(result.getRowsCreated()).isEqualTo(4);
     }
 
     @Test
-    void closeClosesStatement() throws Exception {
+    void acceptsZeroRowsAsALegalUpdate() {
+        var result = new UpdateOperationResult(mock(Statement.class), 0);
+        assertThat(result.getRowsCreated())
+                .as("UPDATE ... WHERE id=? that matches no row returns zero — the result must still expose zero, since the caller decides whether that is an error")
+                .isZero();
+    }
+
+    @Test
+    void closeClosesTheUnderlyingStatement() throws Exception {
         var statement = mock(Statement.class);
         var result = new UpdateOperationResult(statement, 1);
-        result.close();
-        verify(statement).close();
-    }
 
-    @Test
-    void acceptsZeroRows() {
-        var result = new UpdateOperationResult(mock(Statement.class), 0);
-        assertThat(result.getRowsCreated()).isZero();
+        result.close();
+
+        verify(statement).close();
     }
 }

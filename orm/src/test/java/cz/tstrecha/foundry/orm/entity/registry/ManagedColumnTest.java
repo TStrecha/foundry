@@ -403,11 +403,12 @@ class ManagedColumnTest {
     }
 
     @Test
-    void createValueProviderTargetsTheConfiguredSequenceName() {
+    void getValueGeneratorTargetsTheConfiguredSequenceName() {
         var column = widgetIdColumn();
         var session = mock(DBSession.class);
 
-        column.createValueProvider().apply(session);
+        ((cz.tstrecha.foundry.orm.entity.persister.generator.PreInsertValueGenerator<?>) column.getValueGenerator())
+                .createValueProvider().apply(session);
 
         var captor = ArgumentCaptor.forClass(SequenceNextValueQuery.class);
         verify(session).selectNextValueFromSequence(captor.capture());
@@ -415,15 +416,6 @@ class ManagedColumnTest {
                 .as("the generation query must point at the physical sequence name from @SequenceGenerator — not the generator alias")
                 .contains("widget_seq")
                 .doesNotContain("widget_seq_gen");
-    }
-
-    @Test
-    void createValueProviderOnColumnWithoutGeneratorIsRejected() {
-        var column = columnFor("title");
-
-        assertThatThrownBy(column::createValueProvider)
-                .as("asking a column with no generator for a nextval query is a caller bug — must be rejected explicitly, not through an NPE on a null SequencePersister")
-                .isInstanceOf(IllegalStateException.class);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -441,11 +433,12 @@ class ManagedColumnTest {
     }
 
     @Test
-    void createValueProviderForUuidColumnReturnsUuidWithoutTouchingTheSession() {
+    void getValueGeneratorForUuidColumnReturnsUuidWithoutTouchingTheSession() {
         var column = uuidIdColumn();
         var session = mock(DBSession.class);
 
-        var value = column.createValueProvider().apply(session);
+        var value = ((cz.tstrecha.foundry.orm.entity.persister.generator.PreInsertValueGenerator<?>) column.getValueGenerator())
+                .createValueProvider().apply(session);
 
         assertThat(value)
                 .as("the UUID strategy must hand the caller a usable id — never null, and typed as UUID so entity.setId(value) does not need runtime coercion")
@@ -457,9 +450,11 @@ class ManagedColumnTest {
     void twoCallsToUuidColumnValueProviderYieldDistinctUuids() {
         var column = uuidIdColumn();
         var session = mock(DBSession.class);
+        var provider = ((cz.tstrecha.foundry.orm.entity.persister.generator.PreInsertValueGenerator<?>) column.getValueGenerator())
+                .createValueProvider();
 
-        var first = column.createValueProvider().apply(session);
-        var second = column.createValueProvider().apply(session);
+        var first = provider.apply(session);
+        var second = provider.apply(session);
 
         assertThat(first)
                 .as("calling the same ManagedColumn twice must still hand out two distinct ids — otherwise two persists of entities with null id would collide on the primary key")
@@ -484,5 +479,66 @@ class ManagedColumnTest {
         assertThat(user.getName().getTitles().getTitleBefore())
                 .as("sibling values inside the preserved embeddable must survive")
                 .isEqualTo("Dr.");
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<cz.tstrecha.foundry.orm.fixtures.identitygen.IdentityWidgetEntity, Object> identityColumnFor(String columnName) {
+        for (var cp : TestDescriptors.columnPathsFor(cz.tstrecha.foundry.orm.fixtures.identitygen.IdentityWidgetEntity.class)) {
+            if (cp.field().columnName().equals(columnName)) {
+                return new ManagedColumn(cp);
+            }
+        }
+        throw new IllegalArgumentException("No such column: " + columnName);
+    }
+
+    @Test
+    void readAndConsumePostGeneratedValueReadsFromResultSetAndWritesToEntity() throws Exception {
+        var column = identityColumnFor("id");
+        var widget = new cz.tstrecha.foundry.orm.fixtures.identitygen.IdentityWidgetEntity();
+        widget.setLabel("alpha");
+        var rs = mock(ResultSet.class);
+        when(rs.getLong(1)).thenReturn(42L);
+
+        column.readAndConsumePostGeneratedValue(widget, rs, 1);
+
+        assertThat(widget.getId())
+                .as("the whole purpose of this method is to funnel the RETURNING value onto the entity in one hop — any skipped step means the caller gets back an entity with a null id even though the database wrote a row")
+                .isEqualTo(42L);
+    }
+
+    @Test
+    void readAndConsumePostGeneratedValueDispatchesToTheConfiguredJdbcIndex() throws Exception {
+        var column = identityColumnFor("id");
+        var widget = new cz.tstrecha.foundry.orm.fixtures.identitygen.IdentityWidgetEntity();
+        var rs = mock(ResultSet.class);
+        when(rs.getLong(3)).thenReturn(100L);
+
+        column.readAndConsumePostGeneratedValue(widget, rs, 3);
+
+        verify(rs).getLong(3);
+        assertThat(widget.getId())
+                .as("the method must honour the 1-based JDBC column index it was handed — reading column 1 when column 3 was asked for would silently pull the wrong value")
+                .isEqualTo(100L);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ManagedColumn<cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity, Object> uuidColumnFor(String columnName) {
+        for (var cp : TestDescriptors.columnPathsFor(cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity.class)) {
+            if (cp.field().columnName().equals(columnName)) {
+                return new ManagedColumn(cp);
+            }
+        }
+        throw new IllegalArgumentException("No such column: " + columnName);
+    }
+
+    @Test
+    void readAndConsumePostGeneratedValueOnColumnBackedByPreInsertGeneratorFailsLoudly() {
+        var uuidIdColumn = uuidColumnFor("id");
+        var widget = new cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity();
+        var rs = mock(ResultSet.class);
+
+        assertThatThrownBy(() -> uuidIdColumn.readAndConsumePostGeneratedValue(widget, rs, 1))
+                .as("this method is only meaningful on columns backed by a post-insert generator — invoking it on a pre-insert-backed column (UUID, SEQUENCE) is a caller bug in the persist pipeline and must fail loudly, not silently overwrite the pre-insert value with a mis-extracted result-set read")
+                .isInstanceOf(ClassCastException.class);
     }
 }

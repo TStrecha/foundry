@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class ValueGeneratorTest {
+class PreInsertValueGeneratorTest {
 
     private static final SequenceDescriptor WIDGET_SEQ =
             new SequenceDescriptor("widget_seq_gen", "widget_seq");
@@ -56,12 +56,25 @@ class ValueGeneratorTest {
     }
 
     @Test
-    void identityStrategyIsRejectedAsUnsupportedUntilImplemented() {
+    void identityStrategyProducesAnIdentityGenerator() {
         var descriptor = new GeneratorDescriptor(GenerationType.IDENTITY, "");
 
-        assertThatThrownBy(() -> ValueGenerator.fromGeneratorDescriptor(descriptor, null))
-                .as("an unimplemented strategy must announce itself with UnsupportedOperationException — IllegalStateException reads as internal corruption, which is the wrong signal to the caller")
-                .isInstanceOf(UnsupportedOperationException.class);
+        var generator = ValueGenerator.fromGeneratorDescriptor(descriptor, null);
+
+        assertThat(generator)
+                .as("IDENTITY strategy must dispatch to the post-insert IdentityGenerator — the sequence descriptor is irrelevant because the value is produced by the database during INSERT, not by a sequence lookup beforehand")
+                .isInstanceOf(IdentityGenerator.class);
+    }
+
+    @Test
+    void identityStrategyDoesNotRequireASequenceDescriptor() {
+        var descriptor = new GeneratorDescriptor(GenerationType.IDENTITY, "");
+
+        var generator = ValueGenerator.fromGeneratorDescriptor(descriptor, null);
+
+        assertThat(generator)
+                .as("IDENTITY is a database-side strategy — passing a null sequence descriptor must be a legitimate call, never a cause of failure")
+                .isNotNull();
     }
 
     @Test

@@ -5,7 +5,7 @@ import cz.tstrecha.foundry.orm.connection.DBSession;
 import java.util.UUID;
 import java.util.function.Function;
 
-public class UUIDGenerator implements ValueGenerator<UUID> {
+public class UUIDGenerator implements PreInsertValueGenerator<UUID> {
 
     @Override
     public Function<DBSession, UUID> createValueProvider() {

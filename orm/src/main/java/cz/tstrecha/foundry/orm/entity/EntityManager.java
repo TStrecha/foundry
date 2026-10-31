@@ -6,6 +6,7 @@ import cz.tstrecha.foundry.orm.connection.transaction.Transaction;
 import cz.tstrecha.foundry.orm.entity.context.DirtyEntityBag;
 import cz.tstrecha.foundry.orm.entity.context.EntityPersistenceBag;
 import cz.tstrecha.foundry.orm.entity.context.PersistenceContext;
+import cz.tstrecha.foundry.orm.operation.result.ReturningValueConsumer;
 import lombok.RequiredArgsConstructor;
 
 import java.io.Closeable;
@@ -74,12 +75,20 @@ public class EntityManager implements Closeable {
         }
 
         var entityPersister = persisterRegistry.getPersister(entityType);
-        entityPersister.generateValues(entity, session);
+        entityPersister.generateValuesPreInsert(entity, session);
 
-        var sql = entityPersister.generateInsert(entity);
+        var insertStrategy = entityPersister.generateInsert(entity);
 
-        var rowsCreated = session.insert(sql);
-        if(rowsCreated != 1) {
+        ReturningValueConsumer valueConsumer = rs -> {
+            for(int i = 0; i < insertStrategy.postInsertGeneratedColumns().size(); i++) {
+                var column = insertStrategy.postInsertGeneratedColumns().get(i);
+                column.readAndConsumePostGeneratedValue(entity, rs, i + 1);
+            }
+        };
+
+        var rowsCreated = session.insert(insertStrategy.sql(), valueConsumer);
+
+        if(rowsCreated < 1) {
             throw new IllegalStateException("Database created 0 new rows.");
         }
 

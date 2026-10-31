@@ -1,7 +1,10 @@
 package cz.tstrecha.foundry.orm.operation.sql;
 
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
-import cz.tstrecha.foundry.orm.operation.result.UpdateOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.BasicInsertOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.InsertOperationResult;
+import cz.tstrecha.foundry.orm.operation.result.ReturningInsertOperationResult;
+import lombok.Getter;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -12,11 +15,13 @@ import java.util.stream.Collectors;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.*;
 
-public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
+public class InsertSql implements ExecutableQuery<InsertOperationResult> {
 
     private String table;
     private Collection<String> columns;
     private List<ParameterBinder> valueBinders;
+    @Getter
+    private List<String> returningColumns;
 
     public InsertSql into(String table, Collection<String> columns) {
         requireNotEmptyArgument(table, "table");
@@ -40,6 +45,17 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
         return this;
     }
 
+    public InsertSql returning(List<String> returningColumns) {
+        requireNotNullArgument(returningColumns, "returningColumns");
+
+        if(returningColumns.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("returningColumns cannot contain null returningColumns");
+        }
+
+        this.returningColumns = returningColumns;
+        return this;
+    }
+
     @Override
     public String buildSql() {
         requireNotEmptyState(table, "table");
@@ -55,6 +71,10 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
         var sqlBuilder = new StringBuilder();
         sqlBuilder.append("INSERT INTO ").append(table).append("(").append(columnStatement).append(")");
         sqlBuilder.append(" VALUES ").append("(").append(valuePlaceholders).append(")");
+        if(returningColumns != null && !returningColumns.isEmpty()) {
+            var returningColumnsStatement = String.join(",", returningColumns);
+            sqlBuilder.append(" RETURNING ").append(returningColumnsStatement);
+        }
 
         return sqlBuilder.toString();
     }
@@ -68,7 +88,11 @@ public class InsertSql implements ExecutableQuery<UpdateOperationResult> {
     }
 
     @Override
-    public UpdateOperationResult executeStatement(PreparedStatement statement) throws SQLException {
-        return new UpdateOperationResult(statement, statement.executeUpdate());
+    public InsertOperationResult executeStatement(PreparedStatement statement) throws SQLException {
+        if(returningColumns != null && !returningColumns.isEmpty()) {
+            return new ReturningInsertOperationResult(statement, statement.executeQuery());
+        } else {
+            return new BasicInsertOperationResult(statement, statement.executeUpdate());
+        }
     }
 }

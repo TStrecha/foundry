@@ -14,9 +14,14 @@ import cz.tstrecha.foundry.orm.fixtures.embedded.CompositeKeyFixtureEntity;
 import cz.tstrecha.foundry.orm.fixtures.embedded.NameFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.TitlesFixture;
 import cz.tstrecha.foundry.orm.fixtures.embedded.UserFixtureEntity;
+import cz.tstrecha.foundry.orm.fixtures.generated.SequencedWidgetEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.BookEntity;
 import cz.tstrecha.foundry.orm.fixtures.good.PersonEntity;
+import cz.tstrecha.foundry.orm.fixtures.identitygen.IdentityWidgetEntity;
+import cz.tstrecha.foundry.orm.fixtures.uuidgen.UuidWidgetEntity;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -107,11 +112,12 @@ class ManagedTypeTest {
         person.setFirstName("Alice");
         person.setLastName("Smith");
 
-        var binders = mt.getValueBindersForEntity(person);
+        var binders = mt.getColumnBinders(person);
         assertThat(binders).hasSize(3);
         var stmt = mock(PreparedStatement.class);
-        for (int i = 0; i < binders.size(); i++) {
-            binders.get(i).bind(stmt, i + 1);
+        var columnOrder = mt.getManagedColumnLabels().stream().toList();
+        for (var entry : binders.entrySet()) {
+            entry.getValue().bind(stmt, columnOrder.indexOf(entry.getKey()) + 1);
         }
         verify(stmt).setLong(anyInt(), eq(1L));
         verify(stmt).setString(anyInt(), eq("Alice"));
@@ -266,9 +272,9 @@ class ManagedTypeTest {
 
         var stmt = mock(PreparedStatement.class);
         var columnOrder = mt.getManagedColumnLabels().stream().toList();
-        var binders = mt.getValueBindersForEntity(user);
-        for (int i = 0; i < binders.size(); i++) {
-            binders.get(i).bind(stmt, i + 1);
+        var binders = mt.getColumnBinders(user);
+        for (var entry : binders.entrySet()) {
+            entry.getValue().bind(stmt, columnOrder.indexOf(entry.getKey()) + 1);
         }
 
         verify(stmt).setLong(eq(columnOrder.indexOf("id") + 1), eq(1L));
@@ -329,9 +335,9 @@ class ManagedTypeTest {
 
         var stmt = mock(PreparedStatement.class);
         var columnOrder = mt.getManagedColumnLabels().stream().toList();
-        var binders = mt.getValueBindersForEntity(entity);
-        for (int i = 0; i < binders.size(); i++) {
-            binders.get(i).bind(stmt, i + 1);
+        var binders = mt.getColumnBinders(entity);
+        for (var entry : binders.entrySet()) {
+            entry.getValue().bind(stmt, columnOrder.indexOf(entry.getKey()) + 1);
         }
 
         verify(stmt).setString(eq(columnOrder.indexOf("part_a") + 1), eq("A"));
@@ -352,7 +358,7 @@ class ManagedTypeTest {
     void getValueBindersForNullEntityIsRejected() throws Exception {
         var mt = TestDescriptors.managedTypeFor(BookEntity.class);
 
-        assertThatThrownBy(() -> mt.getValueBindersForEntity(null))
+        assertThatThrownBy(() -> mt.getColumnBinders(null))
                 .as("getValueBindersForEntity must reject null explicitly")
                 .isInstanceOf(IllegalArgumentException.class);
     }
@@ -383,5 +389,126 @@ class ManagedTypeTest {
             assertThat(value).as("snapshot[%s] should match column %s", i, col.getColumnLabel())
                     .isEqualTo(snapshot.get(i));
         }
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsIsEmptyForEntityWithoutGenerators() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
+        var book = new BookEntity();
+        book.setId(1L);
+
+        assertThat(mt.getPostInsertGeneratedColumns(book))
+                .as("no column carries a post-insert generator — the list must be empty so the persist pipeline skips the RETURNING round-trip entirely")
+                .isEmpty();
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsReturnsIdColumnForIdentityEntityWithNullId() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        var widget = new IdentityWidgetEntity();
+        widget.setLabel("alpha");
+
+        var postInsertCols = mt.getPostInsertGeneratedColumns(widget);
+
+        assertThat(postInsertCols)
+                .as("@GeneratedValue(IDENTITY) with no caller-supplied value means the database will fill it during INSERT — the persister must advertise this column to be read back from the RETURNING stream")
+                .hasSize(1);
+        assertThat(postInsertCols.get(0).getColumnLabel()).isEqualTo("id");
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsExcludesIdColumnWhenCallerAssignedIt() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        var widget = new IdentityWidgetEntity();
+        widget.setId(555L);
+        widget.setLabel("preassigned");
+
+        assertThat(mt.getPostInsertGeneratedColumns(widget))
+                .as("JPA contract: caller-supplied id takes precedence — the persister must not request it back via RETURNING, otherwise it would overwrite the caller's value with the same value for no reason")
+                .isEmpty();
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsIsEmptyForUuidEntityBecauseUuidIsPreInsert() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(UuidWidgetEntity.class);
+        var widget = new UuidWidgetEntity();
+        widget.setLabel("alpha");
+
+        assertThat(mt.getPostInsertGeneratedColumns(widget))
+                .as("UUID is produced in Java before the write — nothing to read back; mixing it into the post-insert list would force a RETURNING clause and waste a round-trip")
+                .isEmpty();
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsIsEmptyForSequenceEntityBecauseSequenceIsPreInsert() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(SequencedWidgetEntity.class);
+        var widget = new SequencedWidgetEntity();
+        widget.setLabel("alpha");
+
+        assertThat(mt.getPostInsertGeneratedColumns(widget))
+                .as("SEQUENCE values are fetched via nextval before the INSERT — reading them back post-insert would be a duplicate round-trip and could return a different sequence slot if misconfigured")
+                .isEmpty();
+    }
+
+    @Test
+    void getPostInsertGeneratedColumnsRejectsNullEntity() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        assertThatThrownBy(() -> mt.getPostInsertGeneratedColumns(null))
+                .as("null entity is a caller bug — must be rejected with a clear signal rather than NPE while filtering columns")
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void getColumnBindersExcludesIdentityIdColumnWhenEntityValueIsNull() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        var widget = new IdentityWidgetEntity();
+        widget.setLabel("alpha");
+
+        var binders = mt.getColumnBinders(widget);
+
+        assertThat(binders).doesNotContainKey("id");
+        assertThat(binders)
+                .as("the id must be left out of the INSERT when it is a null IDENTITY column — otherwise Postgres' GENERATED BY DEFAULT would try to use NULL as a literal value and fail against the NOT NULL constraint")
+                .containsKey("label");
+    }
+
+    @Test
+    void getColumnBindersIncludesIdentityIdColumnWhenEntityHasSuppliedAValue() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        var widget = new IdentityWidgetEntity();
+        widget.setId(42L);
+        widget.setLabel("preassigned");
+
+        var binders = mt.getColumnBinders(widget);
+
+        assertThat(binders)
+                .as("a caller-supplied IDENTITY value must be bound — explicit control over the id is a documented part of GENERATED BY DEFAULT, and omitting it would silently discard the caller's assignment")
+                .containsKey("id");
+    }
+
+    @Test
+    void getColumnBindersIncludesUuidColumnEvenWhenNullBecauseItIsPreInsertNotPostInsert() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(UuidWidgetEntity.class);
+        var widget = new UuidWidgetEntity();
+        widget.setLabel("alpha");
+
+        var binders = mt.getColumnBinders(widget);
+
+        assertThat(binders)
+                .as("UUID is a pre-insert strategy: the pre-insert phase runs before getColumnBinders, so by the time binders are collected the value is already present. The filter must therefore not strip UUID columns based on strategy, only based on the post-insert flag")
+                .containsKey("id");
+    }
+
+    @Test
+    void getColumnBindersIncludesPlainColumnEvenWhenValueIsNull() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
+        var book = new BookEntity();
+        book.setId(1L);
+
+        var binders = mt.getColumnBinders(book);
+
+        assertThat(binders)
+                .as("a plain column with no generator is the caller's responsibility — the persister must bind whatever value the caller supplied, even NULL, so NOT NULL violations surface at the database boundary rather than being silently suppressed")
+                .containsKey("title");
     }
 }
