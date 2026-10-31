@@ -8,7 +8,6 @@ import cz.tstrecha.foundry.orm.entity.descriptor.code.FieldDescriptor;
 import cz.tstrecha.foundry.orm.entity.persister.generator.PostInsertValueGenerator;
 import cz.tstrecha.foundry.orm.operation.ParameterBinder;
 import cz.tstrecha.foundry.orm.entity.row.RowMapper;
-import jakarta.persistence.GenerationType;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -16,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
@@ -99,19 +99,17 @@ public class ManagedType<T> {
                 .toList();
     }
 
-    public List<?> createEntitySnapshot(T entity) {
-        return columns.values().stream().map(e -> e.getFieldValue(entity)).toList();
+    public Map<ManagedColumn<T, ?>, ?> createEntitySnapshot(T entity) {
+        return columns.values().stream()
+                .collect(HashMap::new,
+                        (m, v) -> m.put(v, v.getFieldValue(entity)),
+                        HashMap::putAll);
     }
 
     @SneakyThrows
     public Object extractKeyFromEntity(T entity) {
         requireNotNullArgument(entity, "entity");
         return idFieldDescriptor.field().get(entity);
-    }
-
-    //TODO: Better way
-    public ManagedColumn<T, ?> getColumnByIndex(int i) {
-        return new ArrayList<>(columns.values()).get(i);
     }
 
     public Set<String> getManagedColumnLabels() {

@@ -72,7 +72,7 @@ class ManagedTypeTest {
         book.setGenre(Genre.FICTION);
         book.setPageCount(10L);
 
-        List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(book);
+        List<Object> snapshot = new java.util.ArrayList<>(mt.createEntitySnapshot(book).values());
         assertThat(snapshot).hasSize(5);
         assertThat(snapshot).containsExactlyInAnyOrder(1L, "T", "A", Genre.FICTION, 10L);
     }
@@ -286,12 +286,11 @@ class ManagedTypeTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void createEntitySnapshotIncludesEmbeddedColumnValues() throws Exception {
         var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var user = new UserFixtureEntity(1L, "Acme", new NameFixture(new TitlesFixture("Dr.", "PhD"), "Alice", "Smith"));
 
-        List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
+        List<Object> snapshot = new java.util.ArrayList<>(mt.createEntitySnapshot(user).values());
 
         assertThat(snapshot)
                 .as("snapshot carries one value per leaf column, including nested ones")
@@ -299,12 +298,11 @@ class ManagedTypeTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void snapshotForEntityWithMissingEmbeddedHasNullsForNestedColumns() throws Exception {
         var mt = TestDescriptors.managedTypeFor(UserFixtureEntity.class);
         var user = new UserFixtureEntity(1L, "Acme", null);
 
-        List<Object> snapshot = (List<Object>) mt.createEntitySnapshot(user);
+        List<Object> snapshot = new java.util.ArrayList<>(mt.createEntitySnapshot(user).values());
 
         assertThat(snapshot)
                 .as("missing embeddable yields nulls for its nested columns rather than failing")
@@ -373,7 +371,54 @@ class ManagedTypeTest {
     }
 
     @Test
-    void getColumnByIndexAgreesWithSnapshotOrdering() throws Exception {
+    void snapshotIncludesPostInsertGeneratedColumnsEvenWhenTheirValueIsNull() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(IdentityWidgetEntity.class);
+        var widget = new IdentityWidgetEntity();
+        widget.setLabel("alpha");
+
+        var snapshot = mt.createEntitySnapshot(widget);
+
+        var idColumn = mt.getColumns().get("id");
+        assertThat(snapshot)
+                .as("the snapshot drives dirty-check — it must list every managed column, including IDENTITY ones that start null. After persist fills the id in-place, the next dirty-check sees null-vs-value and would otherwise mark the id dirty and schedule a pointless UPDATE for an id that was just assigned")
+                .containsKey(idColumn);
+        assertThat(snapshot.get(idColumn))
+                .as("a null entity field must snapshot as null — not be omitted, not substituted with a sentinel")
+                .isNull();
+    }
+
+    @Test
+    void snapshotIncludesPreInsertGeneratedColumnEvenWhenNull() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(UuidWidgetEntity.class);
+        var widget = new UuidWidgetEntity();
+        widget.setLabel("alpha");
+
+        var snapshot = mt.createEntitySnapshot(widget);
+
+        var idColumn = mt.getColumns().get("id");
+        assertThat(snapshot)
+                .as("a pre-insert generated column (UUID) that has not yet been filled must still appear in the snapshot — otherwise the first dirty-check after persist would mark the newly assigned uuid as dirty")
+                .containsKey(idColumn);
+        assertThat(snapshot.get(idColumn)).isNull();
+    }
+
+    @Test
+    void snapshotHoldsSameReferenceAsEntityField() throws Exception {
+        var mt = TestDescriptors.managedTypeFor(BookEntity.class);
+        var book = new BookEntity();
+        book.setId(1L);
+        book.setTitle("original");
+        var titleColumn = mt.getColumns().get("title");
+
+        var snapshot = mt.createEntitySnapshot(book);
+
+        assertThat(snapshot.get(titleColumn))
+                .as("snapshot holds the raw reference to the field value — not a defensive copy; this is why dirty-check must compare by `.equals()`, and why mutating a shared Mutable value would silently hide a change")
+                .isSameAs(book.getTitle());
+    }
+
+    @Test
+    void snapshotPairsEachManagedColumnWithItsCurrentFieldValue() throws Exception {
         var mt = TestDescriptors.managedTypeFor(BookEntity.class);
         var book = new BookEntity();
         book.setId(1L);
@@ -383,12 +428,10 @@ class ManagedTypeTest {
         book.setPageCount(99L);
 
         var snapshot = mt.createEntitySnapshot(book);
-        for (int i = 0; i < snapshot.size(); i++) {
-            var col = mt.getColumnByIndex(i);
-            var value = col.getFieldValue(book);
-            assertThat(value).as("snapshot[%s] should match column %s", i, col.getColumnLabel())
-                    .isEqualTo(snapshot.get(i));
-        }
+
+        assertThat(snapshot)
+                .as("the snapshot's point is to let the dirty-check compare 'before' and 'after' per column — if the key is the column but the value belongs to a different column, dirty-check would blame the wrong field or miss the change entirely")
+                .allSatisfy((column, value) -> assertThat(value).isEqualTo(column.getFieldValue(book)));
     }
 
     @Test

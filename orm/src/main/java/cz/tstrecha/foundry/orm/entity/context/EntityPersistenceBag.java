@@ -7,6 +7,7 @@ import lombok.Getter;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static cz.tstrecha.foundry.orm.util.ValidationUtils.requireNotNullArgument;
@@ -17,7 +18,7 @@ public class EntityPersistenceBag<T> {
     private final EntityKey<T> key;
     private final T entity;
     private final ManagedType<T> managedType;
-    private List<?> snapshot;
+    private Map<ManagedColumn<T, ?>, ?> snapshot;
 
     public EntityPersistenceBag(EntityKey<T> key, T entity, ManagedType<T> managedType) {
         requireNotNullArgument(key, "key");
@@ -35,12 +36,11 @@ public class EntityPersistenceBag<T> {
         var current = managedType.createEntitySnapshot(entity);
         var dirtyColumns = new ArrayList<ManagedColumn<T, ?>>();
 
-        for(var i = 0; i < snapshot.size(); i++) {
-            var snapshotValue = snapshot.get(i);
-            var currentValue = current.get(i);
+        for(var column : snapshot.keySet()) {
+            var snapshotValue = snapshot.get(column);
+            var currentValue = current.get(column);
 
             if(!Objects.equals(snapshotValue, currentValue)) {
-                var column = managedType.getColumnByIndex(i);
                 dirtyColumns.add(column);
             }
         }

@@ -104,10 +104,10 @@ class EntityPersisterTest {
         book.setPageCount(1L);
 
         var mt = persister.getManagedType();
-        var dirty = List.of(
-                mt.getColumnByIndex(1),
-                mt.getColumnByIndex(2),
-                mt.getColumnByIndex(3));
+        var dirty = List.<ManagedColumn<BookEntity, ?>>of(
+                mt.getColumns().get("title"),
+                mt.getColumns().get("author"),
+                mt.getColumns().get("genre"));
 
         var sql1 = persister.generateUpdate(1L, book, dirty).buildSql();
         var sql2 = persister.generateUpdate(1L, book, dirty).buildSql();
@@ -127,9 +127,9 @@ class EntityPersisterTest {
         book.setPageCount(1L);
 
         var mt = persister.getManagedType();
-        var titleCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(1);
-        var authorCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(2);
-        var pageCountCol = (ManagedColumn<BookEntity, ?>) mt.getColumnByIndex(4);
+        var titleCol = (ManagedColumn<BookEntity, ?>) mt.getColumns().get("title");
+        var authorCol = (ManagedColumn<BookEntity, ?>) mt.getColumns().get("author");
+        var pageCountCol = (ManagedColumn<BookEntity, ?>) mt.getColumns().get("page_count");
 
         var sql = persister.generateUpdate(
                 1L, book, List.of(titleCol, authorCol, pageCountCol)).buildSql();
