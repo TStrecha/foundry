@@ -15,8 +15,9 @@ public interface ValueGenerator<T> {
             case SEQUENCE -> new SequenceGenerator(sequenceDescriptor);
             case UUID -> new UUIDGenerator();
             case IDENTITY -> new IdentityGenerator();
-            default -> throw new UnsupportedOperationException(
-                    "Generation strategy " + generatorDescriptor.strategy() + " is not implemented yet");
+            case AUTO -> throw new IllegalStateException("Specify a concrete strategy, AUTO is not supported");
+            case TABLE -> throw new UnsupportedOperationException(
+                    "Generation strategy TABLE is not implemented yet");
         };
     }
 
